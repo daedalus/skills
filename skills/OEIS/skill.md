@@ -313,21 +313,96 @@ A sequence report must include:
 ## §10 · Meta-Insight Tracking
 
 After running multiple candidates, record which constructions tend to produce
-useful sequences and which are dead ends. Current priors:
+useful sequences and which are dead ends. Updated after Batch 1 and Batch 2.
 
 **Productive:**
 - Dirichlet convolutions involving μ and φ
 - Products over unitary divisors
 - Functions of the form φ(n)·g(ω(n))
+- φ(n)·τ(n) — simple product of two classical multiplicative functions
+- n·2^{Ω(n)} — "totally doubled" variant of n; f(p^k) = (2p)^k; exact closed form
+- ∏_{p^a ∥ n} (p^a − 1) — generalizes φ beyond squarefree; collapses to φ(n) on squarefrees
+- Σ_{d unitary} φ(d) = ∏(1 + φ(p^a)) — clean unitary-φ variant
+- (φ ★ φ)(n) = Σ_{d|n} φ(d)·φ(n/d) — Dirichlet self-convolution; prime-power formula
+  f(p^k) = p^{k-2}·(p-1)·[2p + (p-1)(k-1)] for k ≥ 2, f(p) = 2(p-1)
+- (id ★ φ)(n) = Σ_{d|n} d·φ(n/d) — f(p^k) = p^{k-1}·(p + k(p-1)); f(p) = 2p-1
+- Σ_{p^a ∥ n} a² — completely additive, depends only on prime signature; f(p^k) = k²
+
+- Σ_{d|n} φ(d)² — Dirichlet convolution of φ² with 1; f(p^k) = 1+(p-1)²(p^{2k}-1)/(p²-1);
+  near-quadratic growth (α≈2)
+- Completely additive g(a) family (Σ_{p^a ∥ n} g(a)); prime-signature only; slow growth
+  · g(a) = a(a+1)/2  — triangular of exponent; f(p^k) = k(k+1)/2 (same all p)
+  · g(a) = 2^a       — exponential exponent;   f(p^k) = 2^k        (same all p)
 
 **Dead ends:**
 - φ ∘ (∏_{d|n} φ(d)) — non-multiplicative, hard to characterize
 - gcd(σ(n), φ(n)) — non-multiplicative, already in OEIS
 - lcm(σ(n), φ(n)) — non-multiplicative, complex growth
+- σ(rad(n)), rad(σ(n)), Σ rad(d) — broken by sympy's rad(0) edge case at n=1;
+  non-multiplicative with no clean structure even after fixing
+- φ(n)·σ(n)/n — only integer at specific n; not a well-defined integer sequence
+- Σ_{d|n, d sqfree} φ(d) = rad(n) — A007947; see §11
+- Σ_{d|n, d sqfree} d = σ(rad(n)) = ∏_{p|n}(1+p) — derivable from known; see §11
+- ∏_{d unitary|n} (d+1) — n=1 edge breaks alt impl; α>3.0 (too fast, out of range)
 
 **Watch list (experimental, unresolved):**
 - ∑_{d|n} (d XOR n/d) — non-multiplicative but interesting XOR structure
 - ω(n)^{φ(n)} mod n — slow growth, heavily prime-power-dominated
+- φ(n)·ω(n) — not multiplicative, but residual f(ab)/(f(a)f(b)) is governed exactly
+  by the harmonic mean of ω(a) and ω(b); might be worth characterizing as a type
+
+---
+
+## §11 · Confirmed Classical Identities (Do Not Resubmit)
+
+These were rediscovered by the pipeline and confirmed as known. Do not submit.
+
+| Candidate | Identity | Proof sketch |
+|---|---|---|
+| id ★ μ | φ(n) | Möbius inversion: id = φ ★ 1, so id ★ μ = φ ★ (1 ★ μ) = φ ★ ε = φ |
+| σ ★ μ | n (identity) | Möbius inversion: σ = id ★ 1, so σ ★ μ = id ★ ε = id |
+| τ ★ μ | 1 (all-ones) | τ = 1 ★ 1, so τ ★ μ = 1 ★ (1 ★ μ) = 1 ★ ε = 1 |
+| \|{unitary divisors of n}\| | 2^{ω(n)} | Direct: unitary divs are ∏_{p\|n} {1, p^a}; count = 2^{ω(n)} |
+| Σ_{d unitary} d · φ(n/d) | φ(n)·2^{ω(n)} | Equals Batch 1 candidate; not novel |
+| ∏_{p^a ∥ n} (p^a + 1) | unitary σ(n) | ∏(p^a+1) = Σ_{d unitary} d by definition |
+| Σ_{d\|n, d sqfree} φ(d) | rad(n) (A007947) | Each prime p^k contributes φ(1)+φ(p)=1+(p-1)=p; product = rad(n) |
+| Σ_{d\|n, d sqfree} d | σ(rad(n)) = ∏_{p\|n}(1+p) | Squarefree-divisor sum = ∏(1+p) by multiplicativity |
+| J₂(n) = n²·∏(1−1/p²) | A007434 | Jordan totient of order 2; classical |
+
+---
+
+## §12 · Parameterized Families
+
+When a sequence is confirmed as part of a parameterized family, note which
+parameter values are already in OEIS to guide novelty targeting.
+
+**Family: φ(n)·c^{ω(n)} for integer c ≥ 1**
+
+Multiplicative for any constant c. Prime-power formula: f(p^k) = c·p^{k-1}(p-1).
+
+| c | Status | Notes |
+|---|---|---|
+| 1 | Known (= φ(n)) | A000010 |
+| 2 | Batch 1, score 82 | Likely in OEIS; check before submitting |
+| 3 | Batch 2, score 70 | First 20 terms: 1,3,6,6,12,18,18,12,18,36,30,36,36,54,72,24,48,54,54,72 |
+| 4 | Batch 3, score 100 | First 20 terms: 1,4,8,8,16,32,24,16,24,64,40,64,48,96,128,32,64,96,72,128 |
+| 5 | Batch 3, score 100 | First 20 terms: 1,5,10,10,20,50,30,20,30,100,50,100,60,150,200,40,80,150,90,200 |
+| 6 | Untested | Next target |
+| 7+ | Untested | Diminishing novelty probability |
+
+**Family: Σ_{p^a ∥ n} g(a) for various g (completely additive, prime-signature functions)**
+
+| g(a) | f(n) | Notes |
+|---|---|---|
+| a | Ω(n) | A001222 — known |
+| a² | Batch 2, score 75 | f(p^k) = k²; depends only on prime signature |
+| a(a+1)/2 | Batch 3, score 85 | f(p^k) = T(k) triangular; slow growth α≈0.10 |
+| 2^a | Batch 3, score 85 | f(p^k) = 2^k; slow growth α≈0.11 |
+| a! | Untested | Fast growth — interesting |
+| F(a) (Fibonacci) | Untested | F(1)=1, F(2)=1, F(3)=2, F(4)=3, … |
+
+When testing a new member of a known family, reduce the novelty check burden by
+verifying only the first 30 terms against OEIS before full pipeline.
 
 ---
 
@@ -356,4 +431,26 @@ def unitary_divisors(n):
 def is_multiplicative(fn, trials=40):
     pairs = [(2,3),(2,5),(3,5),(4,9),(2,7),(5,9),(4,25),(8,27)]
     return all(fn(a*b) == fn(a)*fn(b) for a,b in pairs if gcd(a,b)==1)
+
+# Dirichlet convolution
+def dirichlet(f, g, n):
+    from sympy import divisors
+    return sum(f(d) * g(n // d) for d in divisors(n))
+
+# Completely additive function from exponent map
+def additive_from_exp(g, n):
+    """f(n) = sum_{p^a || n} g(a)"""
+    return sum(g(a) for a in factorint(n).values()) if n > 1 else 0
+
+# Prime-power profile (for multiplicative analysis)
+def pp_profile(f, primes=(2,3,5,7,11), kmax=8):
+    for p in primes:
+        vals = [f(p**k) for k in range(1, kmax+1)]
+        ratios = [vals[i+1]/vals[i] for i in range(len(vals)-1)]
+        print(f"p={p}: {vals}")
+        print(f"      ratios: {[round(r,4) for r in ratios]}")
+
+# Batch OEIS search string (first 20 terms, n=1..20)
+def oeis_string(f, start=1, count=20):
+    return ", ".join(str(f(n)) for n in range(start, start+count))
 ```
