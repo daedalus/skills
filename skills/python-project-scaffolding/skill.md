@@ -65,8 +65,6 @@ List at least 5 edge cases that the implementation must handle correctly.
 ## Performance & Constraints
 Any O(n) requirements, memory limits, forbidden dependencies.
 
-## Version
-v0.1.0.1
 ```
 
 After writing SPEC.md, **pause and verify it makes sense** before moving on.
