@@ -350,9 +350,6 @@ ruff check src/ tests/
 mypy src/
 ```
 
-## Version
-
-v0.1.0.1
 ```
 
 ---
