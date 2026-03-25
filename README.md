@@ -35,3 +35,15 @@ Example for Python projects using commitizen:
 version = "0.1.0"
 tag_format = "v$version"
 ```
+
+### Setup Virtual Environment for Tests
+
+```bash
+# Create and activate venv
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies and run tests
+pip install -e ".[test]"  # or pip install -r requirements-test.txt
+pytest
+```
