@@ -34,6 +34,25 @@ one focused clarifying question only.
 
 ---
 
+### Step — 0.5 Setup project internal variables to use later
+
+```
+<package_name> Is the package name.
+<project_name> Is the project name.
+<version> Is the project version (default :"0.1.0").
+<project_description> Is the project description.
+<is_mcp_server> Is this project about MCP server? (true/false)
+<author_name> is the author name.
+<author_email> is the author email.
+<target_python> Is the target Python version (default: "3.11").
+<ruff_version> Is the ruff version (default: "v0.9.0").
+<mypy_version> Is the mypy version (default: "v1.14.0").
+<pre_commit_version> Is the pre-commit version (default: "v5.0.0").
+<hatch_version> Is the hatch version (default: "latest").
+<scm_version> Is the setuptools-scm version (default: "0.1.1").
+```
+
+
 ### Step 1 — Write SPEC.md First
 
 **Always write SPEC.md before writing any code.** No exceptions.
@@ -41,7 +60,7 @@ one focused clarifying question only.
 `SPEC.md` is the contract. Everything that follows must obey it.
 
 ```markdown
-# SPEC.md — <ProjectName>
+# SPEC.md — <project_name>
 
 ## Purpose
 One paragraph: what this project does and why.
@@ -112,10 +131,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "<package_name>"
-version = "0.1.0.1"
+version = "<version>"
 description = "<one-line description>"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=<target_python>"
 license = {text = "MIT"}
 authors = [
     {name = "Your Name", email = "you@example.com"}
@@ -145,9 +164,9 @@ all = ["<package_name>[dev,test,lint]"]
 <package_name> = "<package_name>.__main__:main"  # if CLI
 
 [project.urls]
-Homepage = "https://github.com/<user>/<project>"
-Repository = "https://github.com/<user>/<project>"
-Issues = "https://github.com/<user>/<project>/issues"
+Homepage = "https://github.com/<author_name>/<project_name>"
+Repository = "https://github.com/<author_name>/<project_name>"
+Issues = "https://github.com/<author_name>/<project_name>/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/<package_name>"]
@@ -157,7 +176,7 @@ include = ["src/<package_name>"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py<target_python>"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "ANN", "TCH", "N", "C4", "ARG"]
@@ -170,7 +189,7 @@ ignore = ["E501"]
 convention = "google"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "<target_python>"
 strict = true
 src = ["src"]
 tests = ["tests"]
@@ -213,7 +232,7 @@ Follow SPEC.md **to the letter**. For each item in the spec's Public API:
 **`__init__.py` must export:**
 
 ```python
-__version__ = "0.1.0.1"
+__version__ = "<version>"
 __all__ = [...]  # every public symbol
 
 from typing import TYPE_CHECKING
@@ -292,6 +311,11 @@ pytest -v
 
 All tests must pass. Zero failures, zero errors. Coverage must be >= 80%.
 
+**Verify the package imports correctly:**
+```bash
+python -c "import <package_name>; print(<package_name>.__version__)"
+```
+
 ---
 
 ### Step 6 — README.md
@@ -303,7 +327,7 @@ All tests must pass. Zero failures, zero errors. Coverage must be >= 80%.
 
 [![PyPI](https://img.shields.io/pypi/v/<package_name>.svg)](https://pypi.org/project/<package_name>/)
 [![Python](https://img.shields.io/pypi/pyversions/<package_name>.svg)](https://pypi.org/project/<package_name>/)
-[![Coverage](https://codecov.io/gh/<user>/<project>/branch/main/graph/badge.svg)](https://codecov.io/gh/<user>/<project>)
+[![Coverage](https://codecov.io/gh/<author_name>/<project_name>/branch/main/graph/badge.svg)](https://codecov.io/gh/<author_name>/<project_name>)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 ## Install
@@ -333,8 +357,8 @@ Brief description of each public symbol.
 ## Development
 
 ```bash
-git clone https://github.com/<user>/<project>.git
-cd <project>
+git clone https://github.com/<author_name>/<project_name>.git
+cd <project_name>
 pip install -e ".[test]"
 
 # run tests
@@ -364,12 +388,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0.1] - YYYY-MM-DD
-
 ### Added
 - Initial release
 
-[0.1.0.1]: https://github.com/<user>/<project>/releases/tag/v0.1.0.1
+[<version>]: https://github.com/<author_name>/<project_name>/releases/tag/v<version>
 ```
 
 ---
@@ -443,20 +465,20 @@ htmlcov/
 ```yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.0
+    rev: <ruff_version>
     hooks:
       - id: ruff-format
       - id: ruff
         args: [--fix]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.0
+    rev: <mypy_version>
     hooks:
       - id: mypy
         args: [--config-file=pyproject.toml, src/]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: <pre_commit_version>
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -493,12 +515,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[test]"
+        run: uv pip install --system -e ".[test]"
 
       - name: Run tests with coverage
         run: pytest --cov --cov-report=xml --cov-report=term-missing
@@ -519,10 +541,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: 'pip'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
-        run: pip install -e ".[lint]"
+        run: uv pip install --system -e ".[lint]"
 
       - name: Run ruff format
         run: ruff format --check src/ tests/
@@ -599,6 +623,47 @@ jobs:
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
 ```
 
+## Step 11.6 — MCP registry Publish
+**Apply this step ONLY if `<is_mcp_server>` is `true`.**
+
+**`server.json`:**
+```json
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.daedalus/<project_name>",
+  "description": "<project_description>",
+  "repository": {
+    "url": "https://github.com/<author_name>/<project_name>",
+    "source": "github"
+  },
+  "version": "<version>",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "<project_name>",
+      "version": "<version>",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
+
+```
+
+**`mcp.json`:**
+```json
+{
+  "mcpServers": {
+    "<package_name>": {
+      "command": "<package_name>",
+      "env": {}
+    }
+  }
+}
+
+```
+
 ---
 
 ### Step 12 — Lint and Type Check
@@ -631,7 +696,7 @@ After fixing, re-run pytest to confirm nothing broke.
 cd <project_root>
 git init
 git add .
-git commit -m "feat: initial release v0.1.0.1
+git commit -m "feat: initial release v<version>
 
 - Implements <short description>
 - Full pytest suite with <N> tests (>80% coverage)
@@ -659,11 +724,12 @@ Before declaring the project done, verify every item:
 - [ ] All public API in SPEC.md is implemented
 - [ ] All edge cases in SPEC.md have a test
 - [ ] `pytest` exits with 0 failures
+- [ ] `python -c "import <package_name>"` succeeds
 - [ ] Coverage >= 80%
 - [ ] `ruff format --check src/ tests/` exits cleanly
 - [ ] `ruff check src/ tests/` exits cleanly
 - [ ] `mypy src/` exits cleanly
-- [ ] `__version__ == "0.1.0.1"` in `__init__.py`
+- [ ] `__version__ == "<version>"` in `__init__.py`
 - [ ] README.md present with install + usage example
 - [ ] CHANGELOG.md present
 - [ ] LICENSE present
@@ -760,4 +826,6 @@ get `ModuleNotFoundError`.
 for proper package metadata.
 
 **Version management:** For production projects, consider using `hatch` or
-`setuptools-scm` for automatic version management instead of hardcoding `0.1.0.1`.
+`setuptools-scm` for automatic version management instead of hardcoding `<scm_version>`.
+
+**Language:** Make sure the code and the main documentation is always in english.
