@@ -576,6 +576,7 @@ jobs:
 
       - name: Check package
         run: pip install twine && python -m twine check dist/*
+```
 
 ---
 
@@ -640,7 +641,7 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 ```
 
-## Step 11.6 — MCP registry Publish
+### Step 11.6 — MCP registry Publish
 **Apply this step ONLY if `<is_mcp_server>` is `true`.**
 
 **`server.json`:**
@@ -754,6 +755,7 @@ Before declaring the project done, verify every item:
 - [ ] `.gitignore` present
 - [ ] `.pre-commit-config.yaml` present
 - [ ] `.github/workflows/ci.yml` present
+- [ ] `.github/workflows/pypi-publish.yml` present
 - [ ] `py.typed` marker file present
 - [ ] `git log` shows at least one commit
 
