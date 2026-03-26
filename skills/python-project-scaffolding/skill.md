@@ -377,6 +377,12 @@ mypy src/
 
 ```
 
+**Apply this step ONLY if `<is_mcp_server>` is `true`.**
+```README.md
+mcp-name: io.github.<author_name>/<package_name>
+```
+
+
 ---
 
 ### Step 7 — CHANGELOG.md
@@ -648,7 +654,7 @@ jobs:
 ```json
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.daedalus/<project_name>",
+  "name": "io.github.<author_name>/<project_name>",
   "description": "<project_description>",
   "repository": {
     "url": "https://github.com/<author_name>/<project_name>",
@@ -680,6 +686,40 @@ jobs:
   }
 }
 
+```
+
+### Step 11.7 — Publish Python MCP Server (`.github/workflows/mcp-publish.yml`)
+
+**Apply this step ONLY if `<is_mcp_server>` is `true`.**
+
+```yaml
+name: Publish Python MCP Server
+
+on:
+  workflow_run:
+    workflows: ["Publish to PyPI"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MCP Publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.5.0/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Publish to MCP Registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
 ```
 
 ---
