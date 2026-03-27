@@ -17,25 +17,6 @@ My personal curation of skills.md
 
 ## Configuration
 
-### Version Bumping
-
-Configure how version bumping is handled in your projects:
-
-| Tool | Configuration |
-|------|---------------|
-| **commitizen** | `.czrc` or `pyproject.toml` with `[tool.commitizen]` |
-| **bump2version** | `.bumpversion.cfg` or `pyproject.toml` with `[tool.bumpversion]` |
-| **standard-version** | `.versionrc` or `package.json` |
-
-Example for Python projects using commitizen:
-
-```toml
-# pyproject.toml
-[tool.commitizen]
-version = "0.1.0"
-tag_format = "v$version"
-```
-
 ### Setup Virtual Environment for Tests
 
 ```bash
