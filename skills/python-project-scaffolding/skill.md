@@ -727,6 +727,32 @@ jobs:
 
 ---
 
+### Step 11.8 — Bumpversion Configuration
+
+**`.bumpversion.cfg`:**
+
+```ini
+[bumpversion]
+current_version = <version>
+
+[bumpversion:file:pyproject.toml]
+search = version = "{current_version}"
+replace = version = "{new_version}"
+
+[bumpversion:file:src/<project_name>/__init__.py]
+search = __version__ = "{current_version}"
+replace = __version__ = "{new_version}"
+```
+
+**Apply this step ONLY if `<is_mcp_server>` is `true`.**
+```ini
+[bumpversion:file:server.json]
+search = "version": "{current_version}"
+replace = "version": "{new_version}"
+```
+
+---
+
 ### Step 12 — Lint and Type Check
 
 Run linters in order and fix every warning.
