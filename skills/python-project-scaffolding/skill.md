@@ -44,9 +44,9 @@ one focused clarifying question only.
 <version> Is the project version (default :"0.1.0").
 <project_description> Is the project description.
 <is_mcp_server> Is this project about MCP server? (true/false)
-<author_name> is the author name (ask).
-<author_email> is the author email (ask).
-<github_username> Is the github username (ask).
+<author_name> is the author name (git config user.name).
+<author_email> is the author email (git config.email).
+<github_username> Is the github username (git config user.githubusername).
 <target_python> Is the target Python version (default: "3.11").
 <ruff_version> Is the ruff version (default: "v0.9.0").
 <mypy_version> Is the mypy version (default: "v1.14.0").
