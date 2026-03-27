@@ -42,8 +42,9 @@ one focused clarifying question only.
 <version> Is the project version (default :"0.1.0").
 <project_description> Is the project description.
 <is_mcp_server> Is this project about MCP server? (true/false)
-<author_name> is the author name.
-<author_email> is the author email.
+<author_name> is the author name (ask).
+<author_email> is the author email (ask).
+<github_username> Is the github username (ask).
 <target_python> Is the target Python version (default: "3.11").
 <ruff_version> Is the ruff version (default: "v0.9.0").
 <mypy_version> Is the mypy version (default: "v1.14.0").
@@ -137,7 +138,7 @@ readme = "README.md"
 requires-python = ">=<target_python>"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "you@example.com"}
+    {name = "<author_name>", email = "<author_email>"}
 ]
 dependencies = []
 
@@ -164,9 +165,9 @@ all = ["<package_name>[dev,test,lint]"]
 <package_name> = "<package_name>.__main__:main"  # if CLI
 
 [project.urls]
-Homepage = "https://github.com/<author_name>/<project_name>"
-Repository = "https://github.com/<author_name>/<project_name>"
-Issues = "https://github.com/<author_name>/<project_name>/issues"
+Homepage = "https://github.com/<github_username>/<project_name>"
+Repository = "https://github.com/<github_username>/<project_name>"
+Issues = "https://github.com/<github_username>/<project_name>/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/<package_name>"]
@@ -358,7 +359,7 @@ Brief description of each public symbol.
 ## Development
 
 ```bash
-git clone https://github.com/<author_name>/<project_name>.git
+git clone https://github.com/<github_username>/<project_name>.git
 cd <project_name>
 pip install -e ".[test]"
 
@@ -379,7 +380,7 @@ mypy src/
 
 **Apply this step ONLY if `<is_mcp_server>` is `true`.**
 ```README.md
-mcp-name: io.github.<author_name>/<package_name>
+mcp-name: io.github.<github_username>/<package_name>
 ```
 
 
@@ -398,7 +399,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release
 
-[<version>]: https://github.com/<author_name>/<project_name>/releases/tag/v<version>
+[<version>]: https://github.com/<github_username>/<project_name>/releases/tag/v<version>
 ```
 
 ---
@@ -410,7 +411,7 @@ Choose an appropriate license. Default: MIT
 ```markdown
 MIT License
 
-Copyright (c) 2026
+Copyright (c) 2026 <author_name>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -654,10 +655,10 @@ jobs:
 ```json
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.<author_name>/<project_name>",
+  "name": "io.github.<github_username>/<project_name>",
   "description": "<project_description>",
   "repository": {
-    "url": "https://github.com/<author_name>/<project_name>",
+    "url": "https://github.com/<github_username>/<project_name>",
     "source": "github"
   },
   "version": "<version>",
