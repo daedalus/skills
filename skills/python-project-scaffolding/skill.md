@@ -23,6 +23,8 @@ Never skip or reorder steps.
 
 ### Step 0 — Understand the Request
 
+The default branch is master.
+
 Before writing a single file, make sure you know:
 - What the project does (purpose, inputs, outputs)
 - Any constraints (pure stdlib? third-party ok? CLI or library?)
@@ -505,9 +507,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   test:
