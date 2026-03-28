@@ -123,6 +123,57 @@ Create the following layout:
 
 ---
 
+### Step 2.5 — Internal Subsystem Organization
+
+When a package grows beyond a few modules, separate concerns into distinct subsystems
+within `src/<package_name>/`. Each subsystem should be a self-contained package with a
+clear responsibility.
+
+**Layout pattern:**
+
+```
+src/<package_name>/
+├── __init__.py
+├── __main__.py
+├── py.typed
+├── core/              # Core domain logic, no external dependencies
+│   ├── __init__.py
+│   └── models.py
+├── adapters/          # External integrations (API clients, DB, filesystem)
+│   ├── __init__.py
+│   ├── http.py
+│   └── storage.py
+├── services/          # Business logic orchestrating core + adapters
+│   ├── __init__.py
+│   └── pipeline.py
+├── cli/               # CLI layer (if CLI project)
+│   ├── __init__.py
+│   └── commands.py
+└── api/               # HTTP/API layer (if applicable)
+    ├── __init__.py
+    └── routes.py
+```
+
+**Rules:**
+
+- `core/` has zero imports from `adapters/`, `services/`, `cli/`, or `api/`
+- `adapters/` may import from `core/` but not from `services/`, `cli/`, or `api/`
+- `services/` may import from `core/` and `adapters/`, but not from `cli/` or `api/`
+- `cli/` and `api/` may import from any subsystem
+- Never create catch-all modules like `utils.py` at the package root; place utility
+  code near where it's used
+
+**Dependency direction (inward):**
+
+```
+cli/api → services → adapters → core
+```
+
+This ensures `core` remains testable without external dependencies and can be reused
+independently.
+
+---
+
 ### Step 3 — pyproject.toml
 
 **Modern configuration with hatchling + ruff + mypy + coverage:**
