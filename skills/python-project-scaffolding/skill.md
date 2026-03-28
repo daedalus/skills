@@ -127,9 +127,10 @@ Create the following layout:
 
 When a package grows beyond a few modules, separate concerns into distinct subsystems
 within `src/<package_name>/`. Each subsystem should be a self-contained package with a
-clear responsibility.
+clear responsibility. The following is a non-exhaustive list of common subsystem types
+— use only those that apply to your project.
 
-**Layout pattern:**
+**Layout pattern (examples):**
 
 ```
 src/<package_name>/
