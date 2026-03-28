@@ -870,6 +870,7 @@ Before declaring the project done, verify every item:
 - [ ] `mypy src/` exits cleanly
 - [ ] `__version__ == "<version>"` in `__init__.py`
 - [ ] README.md present with install + usage example
+- [ ] `mcp-name` present in README.md (if `<is_mcp_server>` is true)
 - [ ] CHANGELOG.md present
 - [ ] LICENSE present
 - [ ] pyproject.toml has `readme = "README.md"`
