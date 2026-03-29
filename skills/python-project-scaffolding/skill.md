@@ -1010,6 +1010,26 @@ def your_resource() -> str:
     ...
 ```
 
+**Every function of every tool must have proper documentation with at least one example.**
+
+```python
+@mcp.tool()
+def your_tool(arg: str) -> str:
+    """Short description of what the tool does.
+
+    Args:
+        arg: Description of the argument.
+
+    Returns:
+        Description of the return value.
+
+    Example:
+        >>> your_tool("example_input")
+        "expected_output"
+    """
+    ...
+```
+
 For stdio transport, ensure `__main__.py` runs the server:
 
 ```python
