@@ -203,6 +203,7 @@ dev = [
     "ruff",
     "mypy",
     "hatch",
+    "pip-api",
 ]
 test = [
     "pytest",
@@ -882,6 +883,45 @@ Before declaring the project done, verify every item:
 - [ ] `.github/workflows/pypi-publish.yml` present
 - [ ] `py.typed` marker file present
 - [ ] `git log` shows at least one commit
+- [ ] All dependencies verified on PyPI (Step 14)
+
+---
+
+### Step 14 — Verify Dependencies on PyPI
+
+Before finalizing, verify all dependencies in `pyproject.toml` exist on PyPI:
+
+```bash
+# Extract all dependencies from pyproject.toml and check each one
+pip install --quiet pip-api 2>/dev/null || pip install pip-api
+
+python3 << 'EOF'
+import tomllib
+import pip_api
+
+with open("pyproject.toml", "rb") as f:
+    data = tomllib.load(f)
+
+deps = data.get("project", {}).get("dependencies", [])
+for extra, extra_deps in data.get("project", {}).get("optional-dependencies", {}).items():
+    deps.extend(extra_deps)
+
+# Extract package names (remove version specifiers)
+import re
+for dep in deps:
+    pkg_name = re.split(r"[<>=!~]", dep)[0].strip()
+    try:
+        pip_api.pypi_project(pkg_name)
+        print(f"✓ {pkg_name}")
+    except Exception as e:
+        print(f"✗ {pkg_name}: NOT FOUND - {e}")
+        exit(1)
+
+print("\nAll dependencies verified on PyPI!")
+EOF
+```
+
+This gate prevents hallucinated package names from being committed. If any package fails, fix `pyproject.toml` before proceeding.
 
 ---
 
