@@ -857,36 +857,6 @@ If no remote URL was given by the user, stop after `git commit` and inform them.
 
 ---
 
-## Quality Gates
-
-Before declaring the project done, verify every item:
-
-- [ ] SPEC.md exists and is complete
-- [ ] All public API in SPEC.md is implemented
-- [ ] All edge cases in SPEC.md have a test
-- [ ] `pytest` exits with 0 failures
-- [ ] `python -c "import <package_name>"` succeeds
-- [ ] Coverage >= 80%
-- [ ] `ruff format --check src/ tests/` exits cleanly
-- [ ] `ruff check src/ tests/` exits cleanly
-- [ ] `mypy src/` exits cleanly
-- [ ] `__version__ == "<version>"` in `__init__.py`
-- [ ] README.md present with install + usage example
-- [ ] `mcp-name` present in README.md (if `<is_mcp_server>` is true)
-- [ ] CHANGELOG.md present
-- [ ] LICENSE present
-- [ ] pyproject.toml has `readme = "README.md"`
-- [ ] `.gitignore` present
-- [ ] `.github/workflows` directory present
-- [ ] `.pre-commit-config.yaml` present
-- [ ] `.github/workflows/ci.yml` present
-- [ ] `.github/workflows/pypi-publish.yml` present
-- [ ] `py.typed` marker file present
-- [ ] `git log` shows at least one commit
-- [ ] All dependencies verified on PyPI (Step 14)
-
----
-
 ### Step 14 — Verify Dependencies on PyPI
 
 Before finalizing, verify all dependencies in `pyproject.toml` exist on PyPI:
@@ -1041,6 +1011,39 @@ if __name__ == "__main__":
 ```
 
 ---
+
+### Step 15 - Quality Gates
+
+
+Before declaring the project done, verify every item:
+
+- [ ] SPEC.md exists and is complete
+- [ ] All public API in SPEC.md is implemented
+- [ ] All edge cases in SPEC.md have a test
+- [ ] `pytest` exits with 0 failures
+- [ ] `python -c "import <package_name>"` succeeds
+- [ ] Coverage >= 80%
+- [ ] `ruff format --check src/ tests/` exits cleanly
+- [ ] `ruff check src/ tests/` exits cleanly
+- [ ] `mypy src/` exits cleanly
+- [ ] `__version__ == "<version>"` in `__init__.py`
+- [ ] README.md present with install + usage example
+- [ ] `mcp-name` present in README.md (if `<is_mcp_server>` is true)
+- [ ] CHANGELOG.md present
+- [ ] LICENSE present
+- [ ] pyproject.toml has `readme = "README.md"`
+- [ ] `.gitignore` present
+- [ ] `.github/workflows` directory present
+- [ ] `.pre-commit-config.yaml` present
+- [ ] `.github/workflows/ci.yml` present
+- [ ] `.github/workflows/pypi-publish.yml` present
+- [ ] `py.typed` marker file present
+- [ ] `git log` shows at least one commit
+- [ ] All dependencies verified on PyPI (Step 14)
+
+
+---
+
 
 ## Common Pitfalls
 
