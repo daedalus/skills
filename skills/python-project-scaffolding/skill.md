@@ -553,6 +553,8 @@ Install with: `pip install pre-commit && pre-commit install`
 
 ### Step 13 — GitHub Actions CI
 
+**Write `.github/workflows/ci.yml` with the content below:**
+
 ```yaml
 name: CI
 
@@ -641,6 +643,8 @@ jobs:
 ---
 
 ### Step 14 — PyPI Publish
+
+**Write `.github/workflows/pypi-publish.yml` with the content below:**
 
 ```yaml
 name: Publish to PyPI
