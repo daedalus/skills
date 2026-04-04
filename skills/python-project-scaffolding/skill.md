@@ -1038,6 +1038,7 @@ Before declaring the project done, verify every item:
 - [ ] `py.typed` marker file present
 - [ ] `git log` shows at least one commit
 - [ ] All dependencies verified on PyPI (Step 14)
+- [ ] Step 19 complete: git initialized, at least one commit exists, remote configured and pushed
 
 
 ---
