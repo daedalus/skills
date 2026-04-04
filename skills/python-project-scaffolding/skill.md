@@ -845,12 +845,8 @@ git commit -m "feat: initial release v<version>
 - Linted with ruff, type-checked with mypy
 - CI/CD workflow configured
 - Pre-commit hooks configured"
-```
 
-**Push (if remote is configured):**
-
-```bash
-git remote add origin <url>   # only if user provided a remote
+git remote add origin git@github.com:<github_username>/<project_name>.git
 git push -u origin master
 ```
 
