@@ -430,7 +430,7 @@ mypy src/
 
 ```
 
-**Apply this step ONLY if `<is_mcp_server>` is `true`.**
+<!-- Apply this step ONLY if `<is_mcp_server>` is `true`. -->
 
 ```markdown
 mcp-name: io.github.<github_username>/<package_name>
