@@ -55,7 +55,7 @@ one focused clarifying question only.
 ```
 
 
-### Step 2 — Write SPEC.md First
+### Step 2 — Write docs/SPEC.md First
 
 **Always write SPEC.md before writing any code.** No exceptions.
 
@@ -88,7 +88,7 @@ Any O(n) requirements, memory limits, forbidden dependencies.
 
 ```
 
-After writing SPEC.md, **pause and verify it makes sense** before moving on.
+After writing docs/SPEC.md, **pause and verify it makes sense** before moving on.
 
 ---
 
