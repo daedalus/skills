@@ -1,0 +1,20 @@
+{
+  "skill_name": "skill-creator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want a skill that helps me write commit messages. Whenever I give it a diff or a list of changed files, it should suggest a conventional commit message. Can you create that skill?",
+      "expected_output": "A complete skill directory with SKILL.md containing the commit message generation workflow, including description, instructions, and examples"
+    },
+    {
+      "id": 2,
+      "prompt": "Create a skill named 'email-summarizer' that reads email threads and produces a one-paragraph summary highlighting the key decisions, action items, and unanswered questions.",
+      "expected_output": "A skill directory named 'email-summarizer' with SKILL.md including YAML frontmatter (name, description), instructions for summarization workflow, and example inputs/outputs"
+    },
+    {
+      "id": 3,
+      "prompt": "I have this repetitive workflow where I need to: 1) pull data from a CSV, 2) run a python script to clean it, 3) generate a PDF report. Can you turn that into a skill so I don't have to explain it every time?",
+      "expected_output": "A skill that captures the CSV → clean → PDF workflow, with clear instructions for each step and guidance on how to customize file paths and script locations"
+    }
+  ]
+}
