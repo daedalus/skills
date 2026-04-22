@@ -1163,7 +1163,8 @@ Before declaring the project done, verify every item:
 - [ ] `skills/<project_name>/SKILL.md` present (if `<is_mcp_server>` is true)
 - [ ] `server.json` present (if `<is_mcp_server>` is true)
 - [ ] `mcp.json` present (if `<is_mcp_server>` is true)
-- [ ] `.bumpversion.cfg` present 
+- [ ] `.bumpversion.cfg` present
+- [ ] `AGENTS.md` present
 - [ ] `py.typed` marker file present
 - [ ] `git log` shows at least one commit
 - [ ] All dependencies verified on PyPI (Step 21)
@@ -1172,6 +1173,83 @@ Before declaring the project done, verify every item:
 
 ---
 
+### Step 23 — AGENTS.md
+
+Create `AGENTS.md` at the project root to document agent behaviors, commands, and workflows:
+
+```markdown
+# AGENTS.md — <project_name>
+
+## Overview
+
+<one-paragraph description of what this project does and who it's for>
+
+## Commands
+
+| Command | Description |
+|---------|------------|
+| `pytest` | Run test suite |
+| `ruff format` | Format code |
+| `ruff check` | Lint code |
+| `mypy src/` | Type check |
+
+## Development
+
+```bash
+# Setup
+pip install -e ".[test]"
+
+# Test
+pytest
+
+# Lint
+ruff check src/ tests/
+ruff format src/ tests/
+
+# Type check
+mypy src/
+```
+
+## Testing
+
+<brief description of testing approach>
+
+## Code Style
+
+- Format: ruff
+- Lint: ruff + mypy
+- Docstrings: Google style
+
+## Release
+
+```bash
+# Bump version
+bumpversion patch  # or minor/major
+git tag v<version>
+git push && git push --tags
+```
+
+## MCP Server (if `<is_mcp_server>` is true)
+
+```bash
+# Install and use
+pip install <package_name>
+```
+
+Add to your `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "<package_name>": {
+      "command": "<package_name>"
+    }
+  }
+}
+```
+```
+
+---
 
 ## Code Quality
 
