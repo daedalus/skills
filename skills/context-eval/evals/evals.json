@@ -1,0 +1,125 @@
+{
+  "skill_name": "context-eval",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Test short conversation (5 messages) with topic_id strategy. Create 5 messages about Python file editing, run prepare_messages(), measure token usage.",
+      "expected_output": "Token usage, message count, strategy working",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Test sliding_window strategy with same 5 messages. Compare token usage to topic_id.",
+      "expected_output": "Token usage metrics for comparison",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Run conversation with 20 messages (mixed lengths) using topic_id strategy. Measure retention rate.",
+      "expected_output": "Retention percentage > 80%",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Test all 5 strategies with identical 20-message conversation. Aggregate results to benchmark.json",
+      "expected_output": "Benchmark with token usage for all strategies",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Test topic cache has() method with fake topic ID. Verify returns False (hallucination prevention).",
+      "expected_output": "False for unknown topic ID",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Test topic cache get_content() with valid ID. Verify returns stored content.",
+      "expected_output": "Stored content string",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Run 50-message conversation approaching context limit with topic_id. Measure usage_percent.",
+      "expected_output": "Usage below 100%, messages preserved",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Compare summary vs topic_id for 30-message conversation. Which preserves more detail?",
+      "expected_output": "Comparison metrics: retention %, quality score",
+      "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "Test concurrent writes to topic cache. 10 threads writing 50 topics each.",
+      "expected_output": "500 topics stored, no errors",
+      "files": []
+    },
+    {
+      "id": 10,
+      "prompt": "Create benchmark.csv with all 5 strategies: short/medium/long conversations, token usage, retention %",
+      "expected_output": "CSV file with 15 rows (5 strategies x 3 lengths)",
+      "files": ["benchmark.csv"]
+    },
+    {
+      "id": 11,
+      "prompt": "Run forced compaction test: set max_tokens=500,run with 100 messages. Compare sliding_window vs topic_id output counts.",
+      "expected_output": "sliding_window drops older, topic_id keeps more (until LLM extraction)",
+      "files": []
+    },
+    {
+      "id": 12,
+      "prompt": "Verify ContextStrategy.TOPIC_ID enum exists and equals 'topic_id'.",
+      "expected_output": "ContextStrategy.TOPIC_ID.value == 'topic_id'",
+      "files": []
+    },
+    {
+      "id": 13,
+      "prompt": "Test topic cache with SHA256 hash: same content produces same ID, different produces different.",
+      "expected_output": "Deterministic hashing verified",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "Test corrupt JSON handling: write bad JSON to topic file, then call get(). Should return None.",
+      "expected_output": "Returns None for corrupt file (no crash)",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "Test empty content filtering: call put('', 'fact') and put('   ', 'fact'). Should not create valid topic IDs.",
+      "expected_output": "Empty content filtered, no topic created",
+      "files": []
+    },
+    {
+      "id": 16,
+      "prompt": "Run all strategies with 200 messages, measure which preserves most user content vs assistant content separately.",
+      "expected_output": "Preservation rates for user vs assistant messages",
+      "files": []
+    },
+    {
+      "id": 17,
+      "prompt": "Test topic_id strategy with LLM present but no messages to extract. Should handle gracefully.",
+      "expected_output": "No error, returns messages as-is",
+      "files": []
+    },
+    {
+      "id": 18,
+      "prompt": "Create stress test: 1000 messages with topic_id strategy, measure memory and performance.",
+      "expected_output": "Performance metrics under load",
+      "files": []
+    },
+    {
+      "id": 19,
+      "prompt": "Verify topic IDs follow format topic_8hex (e.g., topic_a1b2c3d4). Test with 100 different contents.",
+      "expected_output": "All IDs match pattern topic_[0-9a-f]{8}",
+      "files": []
+    },
+    {
+      "id": 20,
+      "prompt": "Generate final comparison report: strategy recommendations for short/medium/long conversations.",
+      "expected_output": "Markdown report with recommendations",
+      "files": ["strategy-report.md"]
+    }
+  ]
+}
