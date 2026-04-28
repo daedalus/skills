@@ -21,6 +21,8 @@ Never skip or reorder steps.
 
 ## Workflow
 
+**Note:** If `rtk` is available in the environment, prefer using `rtk git <command>` instead of `git <command>` for better workflow integration and consistency.
+
 ### Step 0 — Understand the Request
 
 The default branch is master.
@@ -987,6 +989,8 @@ After fixing, re-run pytest to confirm nothing broke.
 
 ```bash
 cd <project_root>
+
+# If rtk is available, prefer using "rtk git <command>" instead of "git <command>" for better workflow integration
 
 # Create GitHub repository (requires GitHub CLI)
 gh repo create <project_name> --public --source=. --push=false
