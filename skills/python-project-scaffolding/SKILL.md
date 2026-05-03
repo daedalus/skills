@@ -398,7 +398,7 @@ python -c "import <package_name>; print(<package_name>.__version__)"
 [![PyPI](https://img.shields.io/pypi/v/<package_name>.svg)](https://pypi.org/project/<package_name>/)
 [![Python](https://img.shields.io/pypi/pyversions/<package_name>.svg)](https://pypi.org/project/<package_name>/)
 [![Coverage](https://codecov.io/gh/<author_name>/<project_name>/branch/main/graph/badge.svg)](https://codecov.io/gh/<author_name>/<project_name>)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/<github_username>/<package_nane>)
 
 ## Install
 
