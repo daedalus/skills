@@ -1307,7 +1307,8 @@ Review for:
 - No duplicated code (DRY principle)
 - Consistent error handling
 - Full type coverage
-- Clear tool/module/class/function descriptions
+- Clear tool/module/class/function descriptions.
+- What assumptions does this code make that aren't in the spec? What inputs would produce surprising behavior?
 
 ---
 
