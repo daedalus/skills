@@ -53,7 +53,6 @@ one focused clarifying question only.
 <ruff_version> Is the ruff version (default: "v0.9.0").
 <prospector_version> Is the prospector version (default: "v1.18.0").
 <semgrep_version> Is the semgrep version (default: "v1.161.0").
-<mypy_version> Is the mypy version (default: "v1.14.0").
 <pre_commit_version> Is the pre-commit version (default: "v5.0.0").
 <hatch_version> Is the hatch version (default: "latest").
 ```
@@ -180,7 +179,7 @@ independently.
 
 ### Step 5 — pyproject.toml
 
-**Modern configuration with hatchling + ruff + mypy + coverage:**
+**Modern configuration with hatchling + ruff + mypy (via prospector) + coverage:**
 
 ```toml
 [build-system]
@@ -216,11 +215,9 @@ test = [
     "hypothesis",
 ]
 lint = [
-    "ruff",
-    "prospector",
+    "prospector[with_ruff,with_mypy]",
     "semgrep",
-    "mypy",
-]
+  ]
 all = ["<package_name>[dev,test,lint]"]
 
 [project.scripts]
@@ -251,6 +248,8 @@ ignore = ["E501"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+# Note: mypy options are configured inside prospector (see below)
+# prospector --with-tool ruff --with-tool mypy will use [tool.mypy] if present
 [tool.mypy]
 python_version = "<target_python>"
 strict = true
@@ -263,8 +262,11 @@ strictness = "medium"
 test-warnings = false
 
 [tool.prospector.tools]
+ruff = true
+mypy = true
 pylint = true
-pyflakes = true
+pyflakes = false  # redundant with ruff's F rules
+pycodestyle = false  # redundant with ruff's E/W rules
 mccabe = true
 
 [tool.pytest.ini_options]
@@ -437,13 +439,9 @@ pytest
 # format
 ruff format src/ tests/
 
-# lint
-ruff check src/ tests/
-prospector src/
+# lint + type check (prospector runs ruff check + mypy together)
+prospector --with-tool ruff --with-tool mypy src/
 semgrep --config=auto --severity=ERROR src/
-
-# type check
-mypy src/
 ```
 
 ```
@@ -547,20 +545,14 @@ repos:
     rev: <ruff_version>
     hooks:
       - id: ruff-format
-      - id: ruff
-        args: [--fix]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: <mypy_version>
-    hooks:
-      - id: mypy
-        args: [--config-file=pyproject.toml, src/]
 
   - repo: https://github.com/landscapeio/prospector-pre-commit
     rev: <prospector_version>
     hooks:
       - id: prospector
-        args: [--path=src/]
+        additional_dependencies:
+          - ".[with_ruff,with_mypy]"
+        args: [--with-tool=ruff, --with-tool=mypy, --with-tool=pylint, --path=src/]
 
   - repo: https://github.com/semgrep/semgrep
     rev: <semgrep_version>
@@ -644,17 +636,11 @@ jobs:
       - name: Run ruff format
         run: ruff format --check src/ tests/
 
-      - name: Run ruff
-        run: ruff check src/ tests/
-
-      - name: Run prospector
-        run: prospector src/
+      - name: Run prospector (ruff check + mypy + pylint with blending)
+        run: prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
 
       - name: Run semgrep
         run: semgrep --config=auto --severity=ERROR src/
-
-      - name: Run mypy
-        run: mypy src/
 
   build:
     runs-on: ubuntu-latest
@@ -961,20 +947,16 @@ Run linters in order and fix every warning.
 
 ```bash
 # Install lint dependencies
-pip install ruff mypy pytest pytest-cov pre-commit --quiet
+pip install prospector[with_ruff,with_mypy] ruff pytest pytest-cov pre-commit --quiet
 
-# Ruff: format + lint (replaces black + flake8)
+# Ruff: format (not included in prospector)
 ruff format src/ tests/
-ruff check src/ tests/ --fix
 
-# Prospector: comprehensive linting
-prospector src/
+# Prospector: runs ruff check + mypy + pylint together with blending (deduplication)
+prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
 
-# Semgrep: security and pattern scanning
+# Semgrep: security and pattern scanning (not included in prospector)
 semgrep --config=auto --severity=ERROR src/
-
-# MyPy: type checking
-mypy src/ tests/
 
 # Run tests
 pytest
@@ -1001,10 +983,9 @@ git init
 # Commit all files
 git add .
 git commit -m "feat: initial release v<version>
-
 - Implements <short description>
 - Full pytest suite with <N> tests (>80% coverage)
-- Linted with ruff, prospector, and semgrep, type-checked with mypy
+- Linted with ruff format, prospector (ruff check + mypy), and semgrep
 - CI/CD workflow configured
 - Pre-commit hooks configured"
 
@@ -1189,10 +1170,8 @@ Before declaring the project done, verify every item:
 - [ ] `python -c "import <package_name>"` succeeds
 - [ ] Coverage >= 80%
 - [ ] `ruff format --check src/ tests/` exits cleanly
-- [ ] `ruff check src/ tests/` exits cleanly
-- [ ] `prospector src/` exits cleanly
+- [ ] `prospector --with-tool ruff --with-tool mypy src/` exits cleanly
 - [ ] `semgrep --config=auto --severity=ERROR src/` exits cleanly
-- [ ] `mypy src/` exits cleanly
 - [ ] `__version__ == "<version>"` in `__init__.py`
 - [ ] README.md present with install + usage example
 - [ ] `mcp-name` present in README.md (if `<is_mcp_server>` is true)
@@ -1236,10 +1215,8 @@ Create `AGENTS.md` at the project root to document agent behaviors, commands, an
 |---------|------------|
 | `pytest` | Run test suite |
 | `ruff format` | Format code |
-| `ruff check` | Lint code |
-| `prospector src/` | Comprehensive linting |
+| `prospector --with-tool ruff --with-tool mypy src/` | Lint + type check (with blending) |
 | `semgrep --config=auto src/` | Security and pattern scanning |
-| `mypy src/` | Type check |
 
 ## Development
 
@@ -1250,14 +1227,12 @@ pip install -e ".[test]"
 # Test
 pytest
 
-# Lint
-ruff check src/ tests/
+# Format
 ruff format src/ tests/
-prospector src/
-semgrep --config=auto --severity=ERROR src/
 
-# Type check
-mypy src/
+# Lint + type check (prospector runs ruff check + mypy together)
+prospector --with-tool ruff --with-tool mypy src/
+semgrep --config=auto --severity=ERROR src/
 ```
 
 ## Testing
@@ -1266,8 +1241,8 @@ mypy src/
 
 ## Code Style
 
-- Format: ruff
-- Lint: ruff + mypy
+- Format: ruff format
+- Lint + Type check: prospector (runs ruff check + mypy with blending)
 - Docstrings: Google style
 
 ## Release
