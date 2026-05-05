@@ -1,4 +1,10 @@
-# Skill: Investigative Timeline Agent
+---
+name: InvestigativeTimelineAgent
+description: >
+Stateful system for exploring, validating, and constructing grounded timelines from telemetry data (e.g., Elasticsearch). Assists analysts by following leads, expanding hypotheses, and producing traceable timelines.
+---
+
+# Investigative Timeline Agent
 
 ## 1. Purpose
 

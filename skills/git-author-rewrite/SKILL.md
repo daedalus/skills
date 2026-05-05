@@ -1,15 +1,11 @@
+---
+name: git-author-rewrite
+description: Rewrite all commit authors and committers in a git branch or repository history to a new name/email combination. Use this skill whenever the user mentions changing git commit authors, rewriting git attribution, mass updating committer info, fixing author names/emails across a branch history, or wants to correct commit attribution for an entire repo. Trigger even if the user doesn't explicitly mention "git-author-rewrite" or uses casual phrases like "change who wrote these commits" or "update my email on all past commits".
+---
+
 # git-author-rewrite
 
 Rewrite all commit authors in a git branch to a new name/email combination. Useful for correcting attribution across an entire branch history.
-
-## When to use
-
-Trigger on phrases like:
-- "change author of all commits"
-- "rewrite git author info"
-- "mass update committer/author"
-- "fix attribution across branch"
-- "update all commits to use my new email"
 
 ## Workflow
 
@@ -17,7 +13,7 @@ Trigger on phrases like:
 ```bash
 # Get repo URL and current branch
 git remote get-url origin
-rtk git branch --show-current
+git branch --show-current
 ```
 
 ### 2. Clone to /tmp/ for safe rewriting
@@ -48,7 +44,7 @@ Notes:
 ### 4. Verify the rewrite
 Check that authors were updated correctly:
 ```bash
-rtk git log --format="%h %an <%ae> %s" | head -10
+git log --format="%h %an <%ae> %s" | head -10
 ```
 
 ### 5. Clean up filter-branch artifacts

@@ -1,3 +1,8 @@
+---
+name: fgts-naming-convention
+description: FGTS — From General To Specific. A deterministic, scope-descending identifier system for files, variables, configs, and APIs. Makes names sortable, groupable, and self-documenting.
+---
+
 # FGTS — From General To Specific
 > A deterministic, scope-descending identifier system for files, variables, configs, and APIs · v1.0
 

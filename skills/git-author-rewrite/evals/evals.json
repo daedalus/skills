@@ -1,0 +1,23 @@
+{
+  "skill_name": "git-author-rewrite",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to change the author of every commit in my feature branch to my new name 'Alex Smith' and email 'alex.smith@company.com'",
+      "expected_output": "Clones repo to /tmp/, runs git filter-branch with new author/committer name and email, verifies with git log, cleans up filter-branch artifacts, informs user rewritten repo is at /tmp/<repo>-rewrite",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "update all commits in this repo to use my new email alex@newdomain.com, keep the author name as is",
+      "expected_output": "Extracts current author name from existing commits, rewrites all commits with new email while preserving author name, verifies changes, cleans up backup refs",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "fix attribution across my main branch, all commits should show author as 'Taylor' and email 'taylor@dev.io'",
+      "expected_output": "Checks out main branch, rewrites all commit authors and committers to specified name/email, verifies rewrite, provides instructions for applying changes to original repo if requested",
+      "files": []
+    }
+  ]
+}
