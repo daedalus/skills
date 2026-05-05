@@ -41,7 +41,7 @@ one focused clarifying question only.
 ### Step 1 — Setup project internal variables to use later
 
 ```
-<package_name> Is the package name.
+<package_name> Is the package name it must follow pypi conventions like hypenated between words.
 <project_name> Is the project name.
 <version> Is the project version (default :"0.1.0").
 <project_description> Is the project description.
