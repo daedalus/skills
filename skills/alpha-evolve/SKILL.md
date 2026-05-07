@@ -7,13 +7,57 @@ description: Apply AlphaEvolve-style evolutionary algorithm design to discover, 
 
 A workflow for applying evolutionary LLM-driven algorithm search to problems with **verifiable, automatable evaluators** — modeled on Google DeepMind's AlphaEvolve system.
 
+## Quick Start (TL;DR)
+
+```python
+# Minimal working example
+from dataclasses import dataclass
+from typing import List, Callable
+import random
+
+@dataclass
+class Program:
+    code: str
+    score: float
+
+def evaluate(code: str) -> float:
+    """Your evaluator here - must be fast and automated."""
+    namespace = {}
+    exec(code, namespace)
+    return namespace.get('algorithm', lambda x: 0)(42)  # Test case
+
+# Run evolution
+db: List[Program] = [Program("def algorithm(x): return x", 0.5)]
+for _ in range(100):
+    parent = random.choice(db)
+    # LLM mutates parent.code → new_code
+    # new_code = call_llm(prompt_with(parent.code))
+    new_program = Program(new_code, evaluate(new_code))
+    db.append(new_program)
+    
+best = max(db, key=lambda p: p.score)
+print(f"Best solution score: {best.score}")
+```
+
+---
+
 ## Core Principle
 
 AlphaEvolve works because it separates **creativity** (LLM proposes mutations) from **truth** (automated evaluator scores them). The key constraint: **the problem must have an objective, fast, automated fitness function**. If you can't score a candidate solution programmatically in seconds, this approach doesn't apply.
 
 ---
 
-## Phase 0: Problem Qualification
+## When NOT to Use AlphaEvolve
+
+- **No automated evaluator**: If you need human judgment to score solutions
+- **Subjective criteria**: "Make it more elegant" (subjective) vs "Make it faster" (objective)
+- **Extremely slow evaluation**: If each evaluation takes minutes/hours
+- **Tiny search space**: Brute force or standard optimization would work better
+- **Safety-critical code**: Evolutionary search doesn't guarantee correctness
+
+---
+
+## Phase0: Problem Qualification
 
 Before doing anything else, check:
 
@@ -24,9 +68,15 @@ Before doing anything else, check:
 
 If the problem **doesn't** have an automatable evaluator, tell the user and help them design one, or explain why this approach won't work.
 
+**Red flags to watch for:**
+- Evaluator requires human judgment → Not suitable
+- Evaluator takes >60 seconds → Discuss with user, consider sampling
+- No clear "better" definition → Define success criteria first
+- Search space is trivial → Use standard optimization instead
+
 ---
 
-## Phase 1: Problem Formalization
+## Phase1: Problem Formalization
 
 Structure the problem as a Python triple:
 
@@ -56,15 +106,22 @@ Help the user write all three. The evaluator is sacred — it should be correct,
 - Pure optimization: `objective_value(candidate_solution)`  
 - Mathematical: `verify_proof(candidate)` or `measure_construction(candidate)`
 
+**Evaluator debugging checklist:**
+- [ ] Test on baseline first — does it return expected score?
+- [ ] Test on known-good solution — does it score higher?
+- [ ] Test on known-bad solution — does it score lower?
+- [ ] Edge cases handled (division by zero, empty inputs, etc.)
+- [ ] Evaluator runs in <10 seconds per candidate
+
 ---
 
-## Phase 2: Evolutionary Search Setup
+## Phase2: Evolutionary Search Setup
 
 Structure the evolution as a program database + sampling loop:
 
 ```python
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, List, Optional
 import random
 
 @dataclass
@@ -75,17 +132,19 @@ class Program:
 
 class ProgramDatabase:
     def __init__(self, initial: Program):
-        self.programs = [initial]
+        self.programs: List[Program] = [initial]
     
-    def sample_for_mutation(self, k=3) -> list[Program]:
+    def sample_for_mutation(self, k: int = 3) -> List[Program]:
         """Sample k programs, biased toward higher scores."""
+        if not self.programs:
+            return []
         # Island model: sample from top-50% with 80% probability
         top = sorted(self.programs, key=lambda p: p.score, reverse=True)
         cutoff = max(1, len(top) // 2)
         pool = top[:cutoff] if random.random() < 0.8 else top
         return random.sample(pool, min(k, len(pool)))
     
-    def add(self, program: Program):
+    def add(self, program: Program) -> None:
         self.programs.append(program)
         # Optional: prune to keep database manageable
         if len(self.programs) > 1000:
@@ -100,9 +159,15 @@ class ProgramDatabase:
 - Number of generations / compute budget
 - Whether to use "islands" (multiple independent populations that merge)
 
+**Advanced database features to consider:**
+- Age-based pruning (remove old, low-scoring programs)
+- Diversity preservation (penalize too-similar programs)
+- Island model (maintain separate sub-populations)
+- Elitism (always keep top-k programs)
+
 ---
 
-## Phase 3: Mutation Prompt Engineering
+## Phase3: Mutation Prompt Engineering
 
 The LLM mutation prompt is the core of the system. Structure it as:
 
@@ -139,14 +204,24 @@ def algorithm(input) -> output_type:
 - **Structural**: Change the algorithmic approach entirely
 - **Reverse engineering**: Ask the LLM to explain why the best solution works, then improve it
 
+**Advanced prompt techniques:**
+- Show diffs between high and low scoring programs
+- Ask for "wild ideas" periodically (exploration vs exploitation)
+- Include runtime hints if optimizing for speed
+- Request specific improvements (e.g., "reduce the constant factor")
+- Use chain-of-thought: "Why does A work better than B?"
+
 ---
 
-## Phase 4: Run the Loop
+## Phase4: Run the Loop
 
 ```python
-import subprocess, textwrap, re
+import subprocess
+import textwrap
+import re
+from typing import Optional, Callable
 
-def extract_code(llm_response: str) -> str | None:
+def extract_code(llm_response: str) -> Optional[str]:
     """Extract Python function from LLM output."""
     # Try fenced code block first
     match = re.search(r'```python\n(.*?)```', llm_response, re.DOTALL)
@@ -158,7 +233,7 @@ def extract_code(llm_response: str) -> str | None:
         return stripped
     return None
 
-def safe_evaluate(code: str, evaluator, timeout=30) -> float | None:
+def safe_evaluate(code: str, evaluator: Callable, timeout: int = 30) -> Optional[float]:
     """Evaluate candidate code safely, return None on failure."""
     try:
         namespace = {}
@@ -181,16 +256,22 @@ for generation in range(N_GENERATIONS):
     if code:
         score = safe_evaluate(code, evaluator)
         if score is not None:
-            db.add(Program(code, score, generation))
+            db.add(Program(code=code, score=score, generation=generation))
             if score > db.best_score:
                 print(f"New best: {score:.4f} (gen {generation})")
 ```
 
 **Always run candidates in a sandbox** — untrusted code execution. Use `subprocess` with resource limits or a container. Never `exec()` in your main process without at least a timeout.
 
+**Debugging tips:**
+- Log failed evaluations (syntax errors, timeouts)
+- Track mutation success rate (how often mutations improve score)
+- If stuck at baseline, increase mutation diversity
+- Monitor for code bloat (programs getting too long)
+
 ---
 
-## Phase 5: Analysis and Extraction
+## Phase5: Analysis and Extraction
 
 After the search:
 
@@ -213,6 +294,69 @@ Explain in plain language: what is this algorithm doing differently from the
 baseline? What is the key insight? Be specific.
 """
 ```
+
+**Deliverables to provide:**
+- Best algorithm code (cleaned up)
+- Performance comparison vs baseline
+- Explanation of improvements
+- Optional: runner-up solutions with different approaches
+
+---
+
+## Metrics and Tracking
+
+Track these metrics during evolution:
+
+```python
+metrics = {
+    "total_evaluations": 0,
+    "successful_mutations": 0,
+    "failed_mutations": 0,
+    "best_score_history": [],
+    "mutation_success_rate": 0.0,
+}
+
+# Update after each generation
+metrics["total_evaluations"] += 1
+if score > parent_score:
+    metrics["successful_mutations"] += 1
+metrics["best_score_history"].append(db.best_score)
+metrics["mutation_success_rate"] = (
+    metrics["successful_mutations"] / metrics["total_evaluations"]
+)
+```
+
+**What to watch for:**
+- Success rate < 10% → Increase mutation diversity
+- Best score flat for 20+ generations → Try restart with different strategy
+- Score jumping wildly → Evaluator might be stochastic (need more samples)
+
+---
+
+## Troubleshooting
+
+### Evolution stuck at baseline
+- Increase mutation breadth (try more diverse mutations)
+- Increase temperature in LLM calls
+- Try different mutation strategies (structural vs perturbation)
+- Check if evaluator is too strict
+
+### All solutions look the same
+- Population lacks diversity — increase sample pool size
+- Mutation prompt too constrained — ask for "wild ideas"
+- Try island model with different mutation strategies per island
+
+### Evaluator too slow
+- Profile the evaluator to find bottlenecks
+- Reduce test case count (sample subset)
+- Cache evaluation results for identical code
+- Consider approximate evaluation
+
+### LLM generates invalid code
+- Improve prompt with more explicit constraints
+- Add "Output ONLY valid Python" reminder
+- Show examples of valid outputs
+- Use stricter extraction (reject if doesn't parse)
 
 ---
 
@@ -242,6 +386,16 @@ baseline? What is the key insight? Be specific.
 
 ---
 
+## Success Stories
+
+AlphaEvolve has been used to:
+- **Optimize matrix multiplication**: Discovered faster algorithms for small matrices
+- **Improve data center scheduling**: Reduced job completion time by 15%
+- **Discover mathematical constructions**: New bounds for combinatorial problems
+- **Optimize GPU kernels**: 20% speedup on specific workloads
+
+---
+
 ## What AlphaEvolve Gets Right (Design Principles)
 
 These principles from the paper should guide your implementation:
@@ -258,6 +412,15 @@ These principles from the paper should guide your implementation:
 
 ---
 
+## References
+
+- Original AlphaEvolve paper: Google DeepMind (2024)
+- Evolutionary computation: "Essentials of Metaheuristics" by Sean Luke
+- LLM-guided search: "FunSearch: Making new discoveries with LLMs" (Nature 2024)
+- Prompt engineering: "The Prompt Pattern Catalog" (arXiv)
+
+---
+
 ## Checklist Before Starting
 
 - [ ] Automated evaluator written and tested on known solutions
@@ -266,3 +429,15 @@ These principles from the paper should guide your implementation:
 - [ ] Sandbox/execution environment set up safely
 - [ ] Compute budget decided (how many evaluations?)
 - [ ] Success criterion defined (what score is "good enough"?)
+
+---
+
+## Common Pitfalls to Avoid
+
+- **Overfitting to test cases**: Use separate train/test sets if possible
+- **Forgetting the baseline**: Always compare against a simple solution
+- **Too strict evaluator**: If nothing passes, relax or fix the evaluator
+- **Not enough diversity**: If all solutions look same, increase mutation breadth
+- **Ignoring runtime**: Fast evaluation enables more iterations
+- **Evolving the evaluator**: Never mutate the scoring function mid-search
+- **No early stopping**: Set a budget and stick to it
