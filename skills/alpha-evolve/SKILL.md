@@ -137,16 +137,25 @@ baseline_score = evaluate(current_best_algorithm, test_cases)
 Help the user write all three. The evaluator is sacred — it should be correct, comprehensive, and never modified during the search.
 
 **Common evaluator patterns:**
-- **Time Metric (Correctness + Speed)**: When two solutions are correct, faster wins:
-  ```python
-  def evaluate(algorithm) -> float:
-      # Correctness gate: must pass all tests
-      if not passes_all_tests(algorithm):
-          return 0.0
-      # Speed matters: faster = higher score
-      runtime = benchmark(algorithm)
-      return baseline_runtime / runtime  # >1.0 if faster than baseline
-  ```
+
+### Time Metric (Correctness + Speed)
+When two solutions are correct, faster wins:
+```python
+def evaluate(algorithm, baseline_runtime=None) -> float:
+    """Time metric evaluator: faster = higher score."""
+    # Correctness gate: must pass all tests
+    if not passes_all_tests(algorithm):
+        return 0.0
+    # Benchmark the candidate
+    runtime = benchmark(algorithm)
+    # Compare to baseline (if provided)
+    if baseline_runtime is not None:
+        return baseline_runtime / runtime  # >1.0 if faster
+    # No baseline: return inverse runtime
+    return 1.0 / runtime  # Lower runtime → higher score
+```
+
+### Other patterns
 - **Pure optimization**: `objective_value(candidate_solution)`  
 - **Mathematical**: `verify_proof(candidate)` or `measure_construction(candidate)`
 - **Multi-objective**: Return dict with `fitness` + behavioral dimensions (speed, memory, accuracy)
