@@ -326,6 +326,8 @@ Phase 5  Evaluation report (pass rate, category breakdown)
 - **No source inspection** — binary is execute-only; implementation must be derived
   purely from behavioral observation
 - **No test leakage** — tests are never shown to the implementation agent
+- **No wrapping** — candidates must not shell out to or wrap the reference binary;
+  implementation must be a genuine reimplementation from observed behavior
 - **Language freedom** — any language/algorithm is valid; behavior is the only judge
 - **Evaluation is implementation-agnostic** — different architecture, different
   algorithms, same behavior = pass
