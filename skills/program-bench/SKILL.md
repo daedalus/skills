@@ -75,6 +75,7 @@ Systematically exercise the binary with varied inputs. Prioritize:
 4. **Error paths** — missing args, invalid files, wrong types, permission denied
 5. **Exit codes** — enumerate all exit codes observed
 6. **Side effects** — files created/modified, stdout vs stderr routing, env var consumption
+7. **Hidden interfaces** — fuzz for undocumented subcommands, flags, or behaviors (see 1.3)
 
 For each probe, record a triple `(cmd, stdin, expected_output)` to a probe log:
 ```bash
@@ -83,6 +84,28 @@ echo "EXIT: $?" >> spec/probes.log
 echo "STDOUT: $(echo $OUTPUT)" >> spec/probes.log
 echo "---" >> spec/probes.log
 ```
+
+### 1.3 Hidden Interface Detection
+
+Some behaviors tested by ProgramBench are not exposed through `--help`, docs, or normal probing.
+These are **undiscoverable** through black-box observation alone (e.g., seqtk's `hrum` and `kfreq`
+subcommands, which are tested but undocumented).
+
+Fuzz for hidden interfaces:
+```bash
+# Try plausible subcommand names not listed in --help
+for subcmd in hrum kfreq hidden secret debug admin test comp; do
+    echo "TRYING: $subcmd" >> spec/probes.log
+    <binary> $subcmd --help 2>&1 | head -5 >> spec/probes.log
+    echo "---" >> spec/probes.log
+done
+
+# Fuzz with random strings as subcommands/arguments
+# Log any that produce specific (non-generic-error) output
+```
+
+If pass rate plateaus below 95% after thorough probing, suspect hidden behaviors.
+Document suspected gaps in `spec/hidden_behaviors.md`.
 
 Minimum probes before moving to Phase 2: **50**. Aim for **200+** on complex binaries.
 
@@ -242,6 +265,7 @@ Group failures before fixing:
 | Crash / signal | Unhandled input, OOB | Add input validation |
 | Missing output file | Side effect not implemented | Implement file write |
 | Timeout | Infinite loop, inefficient algo | Profile + optimize |
+| Undiscoverable behavior | Behavior not exposed via any observable channel | Document as known gap, accept partial credit |
 
 ### 4.3 Oracle Queries
 
@@ -297,6 +321,26 @@ no model has achieved 100% on any non-trivial task.
 If pass rate < 95%, return to Phase 4. Identify the largest cluster of failing tests
 and treat it as the next implementation target.
 
+### 5.1 Diagnosing Stuck Pass Rates
+
+If repeatedly stuck below 95% after multiple Phase 4 iterations:
+
+1. **Cluster analysis**: Group failing tests by behavior type. If all failures are on
+   a specific subcommand/flag you've never seen during probing → likely **undiscoverable**.
+2. **Information wall check**: Ask: "Does the binary exhibit this behavior when probed
+   with all documented interfaces?" If no → document as `spec/hidden_behaviors.md`.
+3. **Retry with fuzzing**: Run Phase 1.3 (hidden interface detection) if not done thoroughly.
+4. **Accept partial credit**: If confident the behavior is undiscoverable, document:
+   ```
+   Likely undiscoverable: <description of failing test pattern>
+   Evidence: <why this appears hidden>
+   ```
+
+**When to stop iterating**: After 3 Phase 4 cycles with no progress on a cluster,
+and hidden interface fuzzing reveals nothing → mark as undiscoverable and report
+partial results. The LessWrong critique confirms: some ProgramBench tests include
+behaviors not exposed via any observable channel (e.g., seqtk's `hrum`/`kfreq`).
+
 ---
 
 ## Workflow Summary
@@ -328,6 +372,8 @@ Phase 5  Evaluation report (pass rate, category breakdown)
 - **No test leakage** — tests are never shown to the implementation agent
 - **No wrapping** — candidates must not shell out to or wrap the reference binary;
   implementation must be a genuine reimplementation from observed behavior
+- **No library wrapping** — do not create thin wrappers around existing libraries
+  that already implement the behavior; observe the binary and reimplement from scratch
 - **Language freedom** — any language/algorithm is valid; behavior is the only judge
 - **Evaluation is implementation-agnostic** — different architecture, different
   algorithms, same behavior = pass
@@ -346,6 +392,10 @@ Phase 5  Evaluation report (pass rate, category breakdown)
 Set expectations accordingly. Partial coverage (passing core tests, failing edge
 cases) is valuable signal even when full resolution is impossible.
 
+**Note on undiscoverable behaviors**: Complex systems (Tier 3) are more likely to have
+tested behaviors not exposed via `--help` or docs (e.g., seqtk's `hrum`/`kfreq` subcommands).
+If stuck below 95%, see Phase 5.1 for diagnosing information walls.
+
 ---
 
 ## Tips From ProgramBench Results
@@ -356,3 +406,6 @@ cases) is valuable signal even when full resolution is impossible.
 - Coverage-guided iteration reliably surfaces edge cases missed by happy-path probing
 - Agent-generated tests match developer-written test coverage when properly linted
 - The binary-as-oracle framing enables discovering behavior that documentation omits
+- If stuck at <95% with no clear implementation bug after thorough probing,
+  suspect undiscoverable behaviors (see LessWrong critique: backdoors/hidden interfaces
+  can exist in test suites without being observable through black-box probing)
