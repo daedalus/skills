@@ -329,6 +329,7 @@ Phase 5  Evaluation report (pass rate, category breakdown)
 - **Language freedom** — any language/algorithm is valid; behavior is the only judge
 - **Evaluation is implementation-agnostic** — different architecture, different
   algorithms, same behavior = pass
+- **Flaky tests** — All tests must be deterministic, discard those that are not.
 
 ---
 
