@@ -55,6 +55,7 @@ one focused clarifying question only.
 <semgrep_version> Is the semgrep version (default: "v1.161.0").
 <pre_commit_version> Is the pre-commit version (default: "v5.0.0").
 <hatch_version> Is the hatch version (default: "latest").
+<vulture_version> Is the vulture version (default: "v2.11").
 ```
 
 
@@ -217,6 +218,7 @@ test = [
 lint = [
     "prospector[with_ruff,with_mypy]",
     "semgrep",
+    "vulture",
   ]
 all = ["<package_name>[dev,test,lint]"]
 
@@ -443,6 +445,9 @@ ruff format src/ tests/
 # lint + type check (prospector runs ruff check + mypy together)
 prospector --with-tool ruff --with-tool mypy src/
 semgrep --config=auto --severity=ERROR src/
+
+# find unused code (vulture reports dead code with 90%+ confidence)
+vulture --min-confidence 90 src/
 ```
 
 ```
@@ -561,6 +566,12 @@ repos:
       - id: semgrep
         args: [--config=auto, --severity=ERROR, src/]
 
+  - repo: https://github.com/jendrikseipp/vulture
+    rev: <vulture_version>
+    hooks:
+      - id: vulture
+        args: [--min-confidence=90, src/]
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: <pre_commit_version>
     hooks:
@@ -642,6 +653,9 @@ jobs:
 
       - name: Run semgrep
         run: semgrep --config=auto --severity=ERROR src/
+
+      - name: Run vulture (dead code detection)
+        run: vulture --min-confidence 90 src/
 
   build:
     runs-on: ubuntu-latest
@@ -959,6 +973,9 @@ prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
 # Semgrep: security and pattern scanning (not included in prospector)
 semgrep --config=auto --severity=ERROR src/
 
+# Vulture: find unused/dead code (90% confidence threshold)
+vulture --min-confidence 90 src/
+
 # Run tests
 pytest
 ```
@@ -986,7 +1003,7 @@ git add .
 git commit -m "feat: initial release v<version>
 - Implements <short description>
 - Full pytest suite with <N> tests (>80% coverage)
-- Linted with ruff format, prospector (ruff check + mypy), and semgrep
+- Linted with ruff format, prospector (ruff check + mypy), semgrep, and vulture
 - CI/CD workflow configured
 - Pre-commit hooks configured"
 
@@ -1173,6 +1190,7 @@ Before declaring the project done, verify every item:
 - [ ] `ruff format --check src/ tests/` exits cleanly
 - [ ] `prospector --with-tool ruff --with-tool mypy src/` exits cleanly
 - [ ] `semgrep --config=auto --severity=ERROR src/` exits cleanly
+- [ ] `vulture --min-confidence 90 src/` exits cleanly (no unused code)
 - [ ] `__version__ == "<version>"` in `__init__.py`
 - [ ] README.md present with install + usage example
 - [ ] `mcp-name` present in README.md (if `<is_mcp_server>` is true)
@@ -1218,6 +1236,7 @@ Create `AGENTS.md` at the project root to document agent behaviors, commands, an
 | `ruff format` | Format code |
 | `prospector --with-tool ruff --with-tool mypy src/` | Lint + type check (with blending) |
 | `semgrep --config=auto src/` | Security and pattern scanning |
+| `vulture --min-confidence 90 src/` | Dead/unused code detection |
 
 ## Development
 
@@ -1234,6 +1253,9 @@ ruff format src/ tests/
 # Lint + type check (prospector runs ruff check + mypy together)
 prospector --with-tool ruff --with-tool mypy src/
 semgrep --config=auto --severity=ERROR src/
+
+# find unused code
+vulture --min-confidence 90 src/
 ```
 
 ## Testing
