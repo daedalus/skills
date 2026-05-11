@@ -1017,7 +1017,9 @@ git remote add origin-https https://github.com/<github_username>/<project_name>.
 git push -u origin master
 ```
 
-If no remote URL was given by the user, stop after `git commit` and inform them.
+If no remote URL was given by the user run `gh create` then `git push`.
+
+Finish step with `gh repo edit <github_username>/<project_name> --add-topic <topics>`.
 
 ---
 
@@ -1178,8 +1180,7 @@ if __name__ == "__main__":
 
 ### Step 22 - Quality Gates
 
-
-Before declaring the project done, verify every item:
+Before declaring the project done, verify every item (Use TODOs):
 
 - [ ] SPEC.md exists and is complete
 - [ ] All public API in SPEC.md is implemented
@@ -1213,7 +1214,6 @@ Before declaring the project done, verify every item:
 - [ ] `git log` shows at least one commit
 - [ ] All dependencies verified on PyPI (Step 21)
 - [ ] Step 20 complete: gh repo created, git initialized, at least one commit exists, remote configured (SSH + HTTPS) and pushed
-
 
 ---
 
@@ -1346,5 +1346,3 @@ for proper package metadata.
 **README.md** Make sure it's not vague.
 
 ---
-
-
