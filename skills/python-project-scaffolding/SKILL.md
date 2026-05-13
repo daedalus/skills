@@ -56,6 +56,7 @@ one focused clarifying question only.
 <pre_commit_version> Is the pre-commit version (default: "v5.0.0").
 <hatch_version> Is the hatch version (default: "latest").
 <vulture_version> Is the vulture version (default: "v2.11").
+<impactguard_version> Is the impactguard version (default: "v0.1.4").
 ```
 
 
@@ -207,6 +208,7 @@ dev = [
     "mypy",
     "hatch",
     "pip-api",
+    "impactguard",
 ]
 test = [
     "pytest",
@@ -571,6 +573,21 @@ repos:
     hooks:
       - id: vulture
         args: [--min-confidence=90, src/]
+
+  - repo: local
+    hooks:
+      - id: impactguard-check
+        name: ImpactGuard - API Impact Analysis
+        entry: impactguard-check-staged
+        language: system
+        files: \.py$
+        stages: [pre-commit]
+      - id: impactguard-post-commit
+        name: ImpactGuard - Post-Commit Signature Tracking
+        entry: impactguard-post-commit-hook
+        language: system
+        always_run: true
+        stages: [post-commit]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: <pre_commit_version>
