@@ -588,6 +588,11 @@ repos:
         language: system
         always_run: true
         stages: [post-commit]
+      - id: build-check
+        name: Build package before push
+        entry: uv run python -m build
+        language: system
+        stages: [pre-push]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: <pre_commit_version>
