@@ -106,6 +106,12 @@ encoding the trauma of production systems.
 - No vendor-specific ugliness
 - Error handling that covers the happy path failures but not the weird ones
 
+> **Note on methodology documents**: The operational scar axis doesn't apply cleanly to
+> documentation, but experiential anecdote density serves as an analog. Human-written
+> methodologies contain war stories, lessons learned, and context-specific adaptations
+> ("this approach failed in production until we tried X"). AI-generated documentation
+> tends to be theoretically correct but lacks these scars of experience.
+
 ---
 
 ## Axis 4 — Style signals (weakest; treat as corroborating only)
