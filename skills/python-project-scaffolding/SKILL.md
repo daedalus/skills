@@ -56,6 +56,7 @@ one focused clarifying question only.
 <pre_commit_version> Is the pre-commit version (default: "v5.0.0").
 <hatch_version> Is the hatch version (default: "latest").
 <vulture_version> Is the vulture version (default: "v2.11").
+<lizard_version> Is the lizard version (default: "v1.17.10").
 <impactguard_version> Is the impactguard version (default: "v0.1.4").
 ```
 
@@ -221,6 +222,7 @@ lint = [
     "prospector[with_ruff,with_mypy]",
     "semgrep",
     "vulture",
+    "lizard",
   ]
 all = ["<package_name>[dev,test,lint]"]
 
@@ -450,6 +452,12 @@ semgrep --config=auto --severity=ERROR src/
 
 # find unused code (vulture reports dead code with 90%+ confidence)
 vulture --min-confidence 90 src/
+
+# analyze code complexity (lizard reports cyclomatic complexity, NLOC, etc.)
+lizard src/ --min-cyclomatic-complexity 10
+
+# track API impact (impactguard analyzes how staged changes affect public API)
+impactguard-check-staged
 ```
 
 ```
@@ -576,6 +584,17 @@ repos:
 
   - repo: local
     hooks:
+      - id: lizard
+        name: Lizard - Code Complexity Analysis
+        entry: lizard
+        args: [--min-cyclomatic-complexity=10, src/]
+        language: python
+        types: [python]
+        additional_dependencies: ["lizard"]
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
       - id: impactguard-check
         name: ImpactGuard - API Impact Analysis
         entry: impactguard-check-staged
@@ -678,6 +697,9 @@ jobs:
 
       - name: Run vulture (dead code detection)
         run: vulture --min-confidence 90 src/
+
+      - name: Run lizard (code complexity analysis)
+        run: lizard src/ --min-cyclomatic-complexity 10
 
   build:
     runs-on: ubuntu-latest
@@ -984,7 +1006,7 @@ Run linters in order and fix every warning.
 
 ```bash
 # Install lint dependencies
-pip install prospector[with_ruff,with_mypy] ruff pytest pytest-cov pre-commit --quiet
+pip install prospector[with_ruff,with_mypy] ruff pytest pytest-cov pre-commit lizard --quiet
 
 # Ruff: format (not included in prospector)
 ruff format src/ tests/
@@ -997,6 +1019,12 @@ semgrep --config=auto --severity=ERROR src/
 
 # Vulture: find unused/dead code (90% confidence threshold)
 vulture --min-confidence 90 src/
+
+# Lizard: analyze code complexity (cyclomatic complexity, NLOC, etc.)
+lizard src/ --min-cyclomatic-complexity 10
+
+# ImpactGuard: analyze API impact of staged changes
+impactguard-check-staged
 
 # Run tests
 pytest
@@ -1025,7 +1053,7 @@ git add .
 git commit -m "feat: initial release v<version>
 - Implements <short description>
 - Full pytest suite with <N> tests (>80% coverage)
-- Linted with ruff format, prospector (ruff check + mypy), semgrep, and vulture
+- Linted with ruff format, prospector (ruff check + mypy), semgrep, lizard, and vulture
 - CI/CD workflow configured
 - Pre-commit hooks configured"
 
@@ -1214,6 +1242,8 @@ Before declaring the project done, verify every item (Use TODOs):
 - [ ] `prospector --with-tool ruff --with-tool mypy src/` exits cleanly
 - [ ] `semgrep --config=auto --severity=ERROR src/` exits cleanly
 - [ ] `vulture --min-confidence 90 src/` exits cleanly (no unused code)
+- [ ] `lizard src/ --min-cyclomatic-complexity 10` exits cleanly (no excessive complexity)
+- [ ] `impactguard-check-staged` exits cleanly (no unexpected API impact)
 - [ ] `__version__ == "<version>"` in `__init__.py`
 - [ ] README.md present with install + usage example
 - [ ] `mcp-name` present in README.md (if `<is_mcp_server>` is true)
@@ -1259,6 +1289,8 @@ Create `AGENTS.md` at the project root to document agent behaviors, commands, an
 | `prospector --with-tool ruff --with-tool mypy src/` | Lint + type check (with blending) |
 | `semgrep --config=auto src/` | Security and pattern scanning |
 | `vulture --min-confidence 90 src/` | Dead/unused code detection |
+| `lizard src/` | Code complexity analysis |
+| `impactguard-check-staged` | API impact analysis for staged changes |
 
 ## Development
 
@@ -1278,6 +1310,12 @@ semgrep --config=auto --severity=ERROR src/
 
 # find unused code
 vulture --min-confidence 90 src/
+
+# analyze code complexity
+lizard src/ --min-cyclomatic-complexity 10
+
+# track API impact
+impactguard-check-staged
 ```
 
 ## Testing
