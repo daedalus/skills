@@ -58,6 +58,7 @@ one focused clarifying question only.
 <vulture_version> Is the vulture version (default: "v2.11").
 <lizard_version> Is the lizard version (default: "v1.17.10").
 <impactguard_version> Is the impactguard version (default: "v0.1.4").
+<mdformat_version> Is the mdformat version (default: "v0.7.22").
 ```
 
 
@@ -210,6 +211,7 @@ dev = [
     "hatch",
     "pip-api",
     "impactguard",
+    "mdformat",
 ]
 test = [
     "pytest",
@@ -446,6 +448,9 @@ pytest
 # format
 ruff format src/ tests/
 
+# format markdown
+mdformat .
+
 # lint + type check (prospector runs ruff check + mypy together)
 prospector --with-tool ruff --with-tool mypy src/
 semgrep --config=auto --severity=ERROR src/
@@ -561,6 +566,11 @@ repos:
     rev: <ruff_version>
     hooks:
       - id: ruff-format
+
+  - repo: https://github.com/executablebooks/mdformat
+    rev: <mdformat_version>
+    hooks:
+      - id: mdformat
 
   - repo: https://github.com/landscapeio/prospector-pre-commit
     rev: <prospector_version>
@@ -688,6 +698,9 @@ jobs:
 
       - name: Run ruff format
         run: ruff format --check src/ tests/
+
+      - name: Run mdformat
+        run: mdformat --check .
 
       - name: Run prospector (ruff check + mypy + pylint with blending)
         run: prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
@@ -1011,6 +1024,9 @@ pip install prospector[with_ruff,with_mypy] ruff pytest pytest-cov pre-commit li
 # Ruff: format (not included in prospector)
 ruff format src/ tests/
 
+# Mdformat: format markdown
+mdformat .
+
 # Prospector: runs ruff check + mypy + pylint together with blending (deduplication)
 prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
 
@@ -1053,7 +1069,7 @@ git add .
 git commit -m "feat: initial release v<version>
 - Implements <short description>
 - Full pytest suite with <N> tests (>80% coverage)
-- Linted with ruff format, prospector (ruff check + mypy), semgrep, lizard, and vulture
+- Linted with ruff format, mdformat, prospector (ruff check + mypy), semgrep, lizard, and vulture
 - CI/CD workflow configured
 - Pre-commit hooks configured"
 
@@ -1239,6 +1255,7 @@ Before declaring the project done, verify every item (Use TODOs):
 - [ ] `python -c "import <package_name>"` succeeds
 - [ ] Coverage >= 80%
 - [ ] `ruff format --check src/ tests/` exits cleanly
+- [ ] `mdformat --check .` exits cleanly
 - [ ] `prospector --with-tool ruff --with-tool mypy src/` exits cleanly
 - [ ] `semgrep --config=auto --severity=ERROR src/` exits cleanly
 - [ ] `vulture --min-confidence 90 src/` exits cleanly (no unused code)
@@ -1286,6 +1303,7 @@ Create `AGENTS.md` at the project root to document agent behaviors, commands, an
 |---------|------------|
 | `pytest` | Run test suite |
 | `ruff format` | Format code |
+| `mdformat` | Format markdown |
 | `prospector --with-tool ruff --with-tool mypy src/` | Lint + type check (with blending) |
 | `semgrep --config=auto src/` | Security and pattern scanning |
 | `vulture --min-confidence 90 src/` | Dead/unused code detection |
@@ -1303,6 +1321,9 @@ pytest
 
 # Format
 ruff format src/ tests/
+
+# Format markdown
+mdformat .
 
 # Lint + type check (prospector runs ruff check + mypy together)
 prospector --with-tool ruff --with-tool mypy src/
