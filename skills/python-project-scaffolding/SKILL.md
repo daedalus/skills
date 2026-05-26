@@ -632,7 +632,17 @@ repos:
       - id: check-added-large-files
 ```
 
-Install with: `pip install pre-commit && pre-commit install`
+**Must install hooks before first commit — this is non-optional.**
+```bash
+pip install pre-commit && pre-commit install
+```
+
+**Verify hooks are active:**
+```bash
+pre-commit run --all-files
+```
+
+If any hook fails, fix before committing.
 
 ---
 
@@ -1064,7 +1074,10 @@ gh repo create <project_name> --public --source=. --push=false
 # Initialize git (if not already done)
 git init
 
-# Commit all files
+# Ensure pre-commit hooks are installed before first commit
+pre-commit install
+
+# Commit all files (pre-commit hooks will run automatically)
 git add .
 git commit -m "feat: initial release v<version>
 - Implements <short description>
