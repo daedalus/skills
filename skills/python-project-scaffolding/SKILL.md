@@ -52,7 +52,7 @@ one focused clarifying question only.
 <target_python> Is the target Python version (default: "3.11").
 <ruff_version> Is the ruff version (default: "v0.9.0").
 <prospector_version> Is the prospector version (default: "v1.18.0").
-<semgrep_version> Is the semgrep version (default: "v1.161.0").
+<opengrep_version> Is the opengrep version (default: "v1.22.0").
 <pre_commit_version> Is the pre-commit version (default: "v5.0.0").
 <hatch_version> Is the hatch version (default: "latest").
 <vulture_version> Is the vulture version (default: "v2.11").
@@ -222,9 +222,11 @@ test = [
 ]
 lint = [
     "prospector[with_ruff,with_mypy]",
-    "semgrep",
+    "opengrep",
     "vulture",
     "lizard",
+    "mdformat",
+    "impactguard",
   ]
 all = ["<package_name>[dev,test,lint]"]
 
@@ -451,9 +453,9 @@ ruff format src/ tests/
 # format markdown
 mdformat .
 
-# lint + type check (prospector runs ruff check + mypy together)
-prospector --with-tool ruff --with-tool mypy src/
-semgrep --config=auto --severity=ERROR src/
+# lint + type check (prospector runs ruff check + mypy + pylint together)
+prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
+opengrep --config=auto --severity=ERROR src/
 
 # find unused code (vulture reports dead code with 90%+ confidence)
 vulture --min-confidence 90 src/
@@ -566,6 +568,8 @@ repos:
     rev: <ruff_version>
     hooks:
       - id: ruff-format
+      - id: ruff
+        args: [--fix]
 
   - repo: https://github.com/executablebooks/mdformat
     rev: <mdformat_version>
@@ -580,11 +584,15 @@ repos:
           - ".[with_ruff,with_mypy]"
         args: [--with-tool=ruff, --with-tool=mypy, --with-tool=pylint, --path=src/]
 
-  - repo: https://github.com/semgrep/semgrep
-    rev: <semgrep_version>
+  - repo: local
     hooks:
-      - id: semgrep
+      - id: opengrep
+        name: Opengrep - Security and Pattern Scanning
+        entry: opengrep
         args: [--config=auto, --severity=ERROR, src/]
+        language: python
+        types: [python]
+        additional_dependencies: ["opengrep"]
 
   - repo: https://github.com/jendrikseipp/vulture
     rev: <vulture_version>
@@ -715,14 +723,17 @@ jobs:
       - name: Run prospector (ruff check + mypy + pylint with blending)
         run: prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
 
-      - name: Run semgrep
-        run: semgrep --config=auto --severity=ERROR src/
+      - name: Run opengrep
+        run: opengrep --config=auto --severity=ERROR src/
 
       - name: Run vulture (dead code detection)
         run: vulture --min-confidence 90 src/
 
       - name: Run lizard (code complexity analysis)
         run: lizard src/ --min-cyclomatic-complexity 10
+
+      - name: Run impactguard (API impact analysis)
+        run: impactguard extract src/ --output /dev/null
 
   build:
     runs-on: ubuntu-latest
@@ -1029,7 +1040,7 @@ Run linters in order and fix every warning.
 
 ```bash
 # Install lint dependencies
-pip install prospector[with_ruff,with_mypy] ruff pytest pytest-cov pre-commit lizard --quiet
+pip install prospector[with_ruff,with_mypy] ruff opengrep vulture mdformat impactguard pytest pytest-cov pre-commit lizard --quiet
 
 # Ruff: format (not included in prospector)
 ruff format src/ tests/
@@ -1040,8 +1051,8 @@ mdformat .
 # Prospector: runs ruff check + mypy + pylint together with blending (deduplication)
 prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
 
-# Semgrep: security and pattern scanning (not included in prospector)
-semgrep --config=auto --severity=ERROR src/
+# Opengrep: security and pattern scanning (not included in prospector)
+opengrep --config=auto --severity=ERROR src/
 
 # Vulture: find unused/dead code (90% confidence threshold)
 vulture --min-confidence 90 src/
@@ -1082,7 +1093,7 @@ git add .
 git commit -m "feat: initial release v<version>
 - Implements <short description>
 - Full pytest suite with <N> tests (>80% coverage)
-- Linted with ruff format, mdformat, prospector (ruff check + mypy), semgrep, lizard, and vulture
+- Linted with ruff format, mdformat, prospector (ruff check + mypy + pylint), opengrep, lizard, and vulture
 - CI/CD workflow configured
 - Pre-commit hooks configured"
 
@@ -1269,8 +1280,8 @@ Before declaring the project done, verify every item (Use TODOs):
 - [ ] Coverage >= 80%
 - [ ] `ruff format --check src/ tests/` exits cleanly
 - [ ] `mdformat --check .` exits cleanly
-- [ ] `prospector --with-tool ruff --with-tool mypy src/` exits cleanly
-- [ ] `semgrep --config=auto --severity=ERROR src/` exits cleanly
+- [ ] `prospector --with-tool ruff --with-tool mypy --with-tool pylint src/` exits cleanly
+- [ ] `opengrep --config=auto --severity=ERROR src/` exits cleanly
 - [ ] `vulture --min-confidence 90 src/` exits cleanly (no unused code)
 - [ ] `lizard src/ --min-cyclomatic-complexity 10` exits cleanly (no excessive complexity)
 - [ ] `impactguard-check-staged` exits cleanly (no unexpected API impact)
@@ -1317,10 +1328,10 @@ Create `AGENTS.md` at the project root to document agent behaviors, commands, an
 | `pytest` | Run test suite |
 | `ruff format` | Format code |
 | `mdformat` | Format markdown |
-| `prospector --with-tool ruff --with-tool mypy src/` | Lint + type check (with blending) |
-| `semgrep --config=auto src/` | Security and pattern scanning |
+| `prospector --with-tool ruff --with-tool mypy --with-tool pylint src/` | Lint + type check (with blending) |
+| `opengrep --config=auto --severity=ERROR src/` | Security and pattern scanning |
 | `vulture --min-confidence 90 src/` | Dead/unused code detection |
-| `lizard src/` | Code complexity analysis |
+| `lizard src/ --min-cyclomatic-complexity 10` | Code complexity analysis |
 | `impactguard-check-staged` | API impact analysis for staged changes |
 
 ## Development
@@ -1338,9 +1349,9 @@ ruff format src/ tests/
 # Format markdown
 mdformat .
 
-# Lint + type check (prospector runs ruff check + mypy together)
-prospector --with-tool ruff --with-tool mypy src/
-semgrep --config=auto --severity=ERROR src/
+# Lint + type check (prospector runs ruff check + mypy + pylint together)
+prospector --with-tool ruff --with-tool mypy --with-tool pylint src/
+opengrep --config=auto --severity=ERROR src/
 
 # find unused code
 vulture --min-confidence 90 src/
@@ -1359,7 +1370,7 @@ impactguard-check-staged
 ## Code Style
 
 - Format: ruff format
-- Lint + Type check: prospector (runs ruff check + mypy with blending)
+- Lint + Type check: prospector (runs ruff check + mypy + pylint with blending)
 - Docstrings: Google style
 
 ## Release
