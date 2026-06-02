@@ -115,6 +115,8 @@ Create the following layout:
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
+├── tools/
+│   └── release.sh         # automated release workflow
 ├── src/
 │   └── <package_name>/
 │       ├── __init__.py     # exports version + public API
@@ -1034,7 +1036,58 @@ replace = "version": "{new_version}"
 
 ---
 
-### Step 19 — Lint and Type Check
+### Step 19 — Release Script
+
+Create `tools/release.sh` to automate version bumps, tagging, builds, and GitHub releases:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ── release.sh ──────────────────────────────────────────────────────────────
+# Bump version → commit + tag → push → build → GitHub release.
+# Usage:  ./tools/release.sh [patch|minor|major]   (default: patch)
+# ────────────────────────────────────────────────────────────────────────────
+
+PART="${1:-patch}"
+
+# Ensure working tree is clean
+if ! git diff --stat --exit-code; then
+    echo "error: working tree has uncommitted changes; aborting." >&2
+    exit 1
+fi
+
+# Ensure we are on master (or main)
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" != "master" ] && [ "$BRANCH" != "main" ]; then
+    echo "warning: releasing from branch '$BRANCH' (not master/main)"
+fi
+
+echo "==> bumpversion $PART"
+rtk bumpversion "$PART" --tag --verbose
+
+echo "==> push commit + tags"
+rtk git push
+rtk git push --tags
+
+echo "==> build"
+rtk python -m build
+
+echo "==> gh release"
+TAG=$(git describe --tags --abbrev=0)
+rtk gh release create "$TAG" --generate-notes
+
+echo "==> done: $TAG released"
+```
+
+Make the script executable:
+```bash
+chmod +x tools/release.sh
+```
+
+---
+
+### Step 20 — Lint and Type Check
 
 Run linters in order and fix every warning.
 
@@ -1072,7 +1125,7 @@ After fixing, re-run pytest to confirm nothing broke.
 
 ---
 
-### Step 20 — Git Init, Commit, Push
+### Step 21 — Git Init, Commit, Push
 
 ```bash
 cd <project_root>
@@ -1113,7 +1166,7 @@ Finish step with `gh repo edit <github_username>/<project_name> --add-topic <top
 
 ---
 
-### Step 21 — Verify Dependencies on PyPI
+### Step 22 — Verify Dependencies on PyPI
 
 Before finalizing, verify all dependencies in `pyproject.toml` exist on PyPI:
 
@@ -1268,7 +1321,7 @@ if __name__ == "__main__":
 
 ---
 
-### Step 22 - Quality Gates
+### Step 23 - Quality Gates
 
 Before declaring the project done, verify every item (Use TODOs):
 
@@ -1302,15 +1355,16 @@ Before declaring the project done, verify every item (Use TODOs):
 - [ ] `server.json` present (if `<is_mcp_server>` is true)
 - [ ] `mcp.json` present (if `<is_mcp_server>` is true)
 - [ ] `.bumpversion.cfg` present
+- [ ] `tools/release.sh` present and executable
 - [ ] `AGENTS.md` present
 - [ ] `py.typed` marker file present
 - [ ] `git log` shows at least one commit
-- [ ] All dependencies verified on PyPI (Step 21)
-- [ ] Step 20 complete: gh repo created, git initialized, at least one commit exists, remote configured (SSH + HTTPS) and pushed
+- [ ] All dependencies verified on PyPI (Step 22)
+- [ ] Step 21 complete: gh repo created, git initialized, at least one commit exists, remote configured (SSH + HTTPS) and pushed
 
 ---
 
-### Step 23 — AGENTS.md
+### Step 24 — AGENTS.md
 
 Create `AGENTS.md` at the project root to document agent behaviors, commands, and workflows:
 
@@ -1375,12 +1429,20 @@ impactguard-check-staged
 
 ## Release
 
+Use `tools/release.sh` to automate version bumps, builds, and GitHub releases:
+
 ```bash
-# Bump version
-bumpversion patch  # or minor/major
-git tag v<version>
-git push && git push --tags
+./tools/release.sh          # bump patch (default)
+./tools/release.sh minor
+./tools/release.sh major
 ```
+
+The script:
+- Checks working tree is clean; warns if not on `master`/`main`
+- Runs `bumpversion <part> --tag --verbose`
+- Pushes commit + tags
+- Builds the package
+- Creates a GitHub release with auto-generated notes
 
 ## MCP Server (if `<is_mcp_server>` is true)
 
