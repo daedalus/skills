@@ -463,7 +463,7 @@ opengrep --config=auto --severity=ERROR src/
 vulture --min-confidence 90 src/
 
 # analyze code complexity (lizard reports cyclomatic complexity, NLOC, etc.)
-lizard src/ --min-cyclomatic-complexity 10
+lizard src/ --CCN=15
 
 # track API impact (impactguard analyzes how staged changes affect public API)
 impactguard-check-staged
@@ -1064,7 +1064,7 @@ if [ "$BRANCH" != "master" ] && [ "$BRANCH" != "main" ]; then
 fi
 
 echo "==> bumpversion $PART"
-rtk bumpversion "$PART" --tag --verbose
+rtk bumpversion "$PART" --tag --verbose --commit
 
 echo "==> push commit + tags"
 rtk git push
