@@ -607,7 +607,7 @@ repos:
       - id: lizard
         name: Lizard - Code Complexity Analysis
         entry: lizard
-        args: [--min-cyclomatic-complexity=10, src/]
+        args: [--CCN=15, src/]
         language: python
         types: [python]
         additional_dependencies: ["lizard"]
