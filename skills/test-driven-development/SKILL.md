@@ -82,6 +82,8 @@ Now and only now: make implementation design decisions.
 
 Go back to Step 2. Keep going until the test list is empty and your fear has transmuted into boredom.
 
+**Check for free passes:** before writing the next test, scan the remaining list — some items may already be covered by the implementation you just wrote. Run the suite against them mentally or with a quick probe. If they pass: mark them off, no test needed. This is not cheating; it's the implementation doing more work than the minimum test demanded.
+
 ---
 
 ## Interface vs. Implementation Split
