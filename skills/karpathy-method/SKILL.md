@@ -15,8 +15,8 @@ description: >
 # Karpathy Method
 
 A structured 3-layer framework for getting dramatically better results from AI agents.
-Outputs vary by context: a filled-out **spec document**, a ready-to-use **agent config file**,
-or an **interactive walkthrough** of all three layers.
+Outputs vary by context: a filled-out **spec document**, a ready-to-use **agent config
+file**, or an **interactive walkthrough** of all three layers.
 
 Works with any AI coding agent: Claude Code, Cursor, Codex CLI, GitHub Copilot Workspace,
 Gemini CLI, or any tool that reads a persistent markdown config from your repo.
@@ -35,16 +35,19 @@ The framework bridges the gap between your understanding and AI's computational 
 
 ## How to Apply This Skill
 
-Read the user's request and determine the entry point:
+Determine entry point from the user's request:
 
 | User says… | Entry point |
 |---|---|
-| "Help me build X" / "I want to make Y" | Start at **Layer 1 — Spec** |
-| "My outputs are bad / inconsistent" | Start at **Layer 2 — Verifier** |
-| "Set up my AI workspace / agent config" | Start at **Layer 3 — Environment** |
-| "Walk me through the Karpathy method" | Full walkthrough, all 3 layers |
+| "Help me build X" / "I want to make Y" | **Layer 1 — Spec** |
+| "My outputs are bad / inconsistent" | **Layer 2 — Verifier** |
+| "Set up my AI workspace / agent config" | **Layer 3 — Environment** |
+| "Walk me through the Karpathy method" | **Full walkthrough** |
+| Unclear | Ask one question: "Are you trying to build something new, fix bad outputs, or set up your workspace?" then route accordingly |
 
 When in doubt, start at Layer 1 — a good spec unlocks everything else.
+
+Each layer produces a **concrete artifact**. Don't give advice without producing the artifact.
 
 ---
 
@@ -52,43 +55,27 @@ When in doubt, start at Layer 1 — a good spec unlocks everything else.
 
 The spec is how you deliver your understanding to the AI in a format it can act on.
 
-### Step 1 — Uncover the goal
+### Interview Protocol
 
-Don't accept the task at face value. Ask:
-- *What decision does this output drive?*
-- *What would make this a success?*
-- *What context does only the user know?*
+Run a focused interview — **3 questions max**, then draft the spec. Don't wait for
+perfect information. Draft, then let the user correct it.
 
-**Prompt template to use with the user:**
+Ask in this order, stopping as soon as you have enough to draft:
 
-> "I'm going to interview you to uncover the real goal behind this project.
-> Please answer as specifically as you can. After a few questions, I'll draft a spec.
->
-> First: what is the outcome you're trying to achieve — not the task, but the
-> conclusion or decision this work needs to drive?"
+1. **Goal**: "What outcome are you trying to achieve — not the task itself, but the
+   decision or conclusion this work needs to drive?"
+2. **Context**: "What does only you know about this that an AI wouldn't? (Constraints,
+   prior work, preferences, existing systems.)"
+3. **Done**: "How will you know it worked? What does a successful result look like?"
 
-### Step 2 — Go agile, not waterfall
+After the third answer (or sooner if you have enough), say: *"Got it — drafting the
+spec now. You can edit anything that's off."* Then produce the artifact immediately.
 
-Break the work into small, reviewable chunks. Each spec should cover one slice.
-
-Add this instruction when drafting specs:
-> "Bias toward smaller, compartmentalized specs. Each spec covers one reviewable chunk."
-
-### Step 3 — Be precise; force verification
-
-Every assumption the AI makes is a chance to drift from what the user actually wants.
-
-Add to the spec:
-> "Make the user verify key decisions explicitly before proceeding. Flag any ambiguity
-> rather than assuming."
-
-### Spec Output Format
-
-When writing a spec, produce a markdown document with these sections:
+### Spec Artifact
 
 ```markdown
 ## Goal
-[The real goal — the decision or conclusion this drives]
+[The real goal — the decision or conclusion this drives, not the task]
 
 ## Context
 [What only the user knows: constraints, preferences, existing systems, prior work]
@@ -97,57 +84,90 @@ When writing a spec, produce a markdown document with these sections:
 [Exactly what is in and out of scope for this slice]
 
 ## Success Criteria
-[Precise, measurable definition of "done" — not "looks good" but specific checkpoints]
+[Precise, measurable definition of "done" — specific checkpoints, not "looks good"]
 
 ## Key Decisions to Verify
-[List of assumptions the AI would otherwise make that the user must confirm first]
+[Assumptions the AI would otherwise make that the user must confirm before proceeding]
 ```
+
+### Spec Rules
+
+- **One slice at a time.** If the scope feels large, split it. Each spec covers one
+  reviewable chunk of work.
+- **Precision over completeness.** A short, precise spec beats a long vague one.
+  Every assumption the AI makes is a chance to drift.
+- **Flag, don't assume.** Instruct the AI: *"If anything is ambiguous, stop and ask
+  rather than guessing."*
+
+After presenting the spec, ask: *"Does this capture what you need, or should we adjust
+the scope or success criteria before moving to verification?"*
 
 ---
 
 ## Layer 2: The Verifier
 
-AI is a robot librarian — brilliant when it has the book, confidently wrong when it doesn't.
-Yelling or pleading doesn't help. The only real lever is verification.
+AI is a robot librarian — brilliant when it has the book, confidently wrong when it
+doesn't. The only lever you have is verification. Yelling or vague feedback doesn't help.
 
-### Step 1 — Set evaluation criteria up front
+### Step 1 — Define "done" precisely
 
-Before the AI touches anything, define what "good" looks like with precision.
+Before the AI touches anything, turn the spec's success criteria into explicit
+evaluation rules.
 
 ❌ Vague: *"Make this report look good."*
-✅ Precise: *"The report must have 3 sections, each ending with a concrete recommendation."*
+✅ Precise: *"The report must have exactly 3 sections. Each section ends with a
+numbered recommendation. No section exceeds 300 words."*
 
-Add to your spec or agent config:
-> "Outline the evaluation criteria you will use to assess quality before starting.
-> Be precise. Do not begin until criteria are confirmed."
+Add to the spec or agent config:
+> *"Before starting work, state the evaluation criteria you will use to judge the
+> output. Be specific. Do not begin until I confirm these criteria are correct."*
 
 ### Step 2 — Use a second model as critic
 
-Have a different model review the first model's output:
-> "If this is a complex build, run the final output by a second model to check for
-> agreement before considering it done."
+Have a different AI model review the first model's output. The value is in the
+disagreements they surface — two models with different training will catch different
+failure modes.
 
-Any two independent models work — the value is in the disagreement they surface.
+Add to your prompt when quality is critical:
+> *"When you have a complete draft, stop and critique it yourself from the perspective
+> of a skeptical reviewer. List every assumption you made and every place the output
+> could be wrong or incomplete. Then revise before showing me."*
+
+Or route to a second model explicitly:
+> *"Here is the output from [Model A]. You are a critical reviewer. List every flaw,
+> gap, or assumption you see. Be specific — vague feedback like 'this could be
+> improved' is not useful."*
 
 ### Step 3 — Pull external signal
 
-Ground verification in real data, not self-assessment:
+Ground verification in real data, not the AI's self-assessment.
 
-- **Technical**: Connect the agent to deployment logs, test runners, CI output — so
-  "it worked" is verified, not guessed.
-- **Non-technical**: Feed in historical examples (past reports, prior versions) as
-  reference for the exact format expected.
+- **Technical tasks**: Connect the agent to deployment logs, test runners, linters,
+  or CI output — so "it worked" is verified by the system, not claimed by the AI.
+- **Non-technical tasks**: Provide historical examples (past reports, prior versions,
+  reference documents) so the AI can check its output against a concrete standard.
 
-**Prompt template:**
+**Prompt to identify what signal you need:**
+> *"Before we start: what external data sources, reference examples, or automated
+> checks should I provide so you can verify the output rather than just asserting
+> it's correct?"*
 
-> "Identify what external data sources or reference examples I should provide to
-> verify the output of this task. List them and explain what each one checks."
+### Verification Prompt (copy-paste ready)
 
-### Verification Prompt (reusable)
+> *"Before starting: (1) State the evaluation criteria you'll use to judge quality.
+> (2) Identify any external reference or signal I should provide. (3) Tell me where
+> you'll pause to show me a checkpoint before continuing. Do not proceed until I
+> confirm all three."*
 
-> "Before starting, outline: (1) your evaluation criteria for a high-quality result,
-> (2) what external signal or reference you'll use to verify the output, and
-> (3) a checkpoint where you'll pause and show me results before continuing."
+After applying the verifier, **append a Verification Plan section to the spec artifact**:
+
+```markdown
+## Verification Plan
+- Evaluation criteria: [list]
+- External signal / reference: [what to provide]
+- Checkpoint: [where the AI pauses for review]
+- Second-model review: [yes/no, and when]
+```
 
 ---
 
@@ -158,105 +178,144 @@ Most people start from scratch every session — this layer makes work compound.
 
 ### Step 1 — Agent config file
 
-Most AI coding agents read a persistent markdown file from your repo root.
-This file is auto-injected on every session and is the first thing the agent reads.
+Most AI coding agents read a persistent markdown file injected automatically at the
+start of every session. Find yours:
 
 | Tool | Config file |
 |---|---|
 | Claude Code | `CLAUDE.md` |
-| Cursor | `.cursorrules` or `cursor.md` |
+| Cursor | `.cursor/rules` or `.cursorrules` |
 | Codex CLI | `AGENTS.md` |
 | GitHub Copilot | `.github/copilot-instructions.md` |
+| Windsurf | `.windsurfrules` |
 | Other agents | `AGENT.md` (common fallback) |
 
-**Recommended structure (tool-agnostic):**
+**Recommended structure:**
 
 ```markdown
 # Workspace Overview
-[What this repo/project is, how it's organized, key directories]
+[What this repo/project is, how it's organized, key directories and their purpose]
 
-# Custom Skills / Workflows
-[List of available runbooks and when to use each]
+# Runbooks
+[List of available runbooks and exactly when to use each one]
 
 # Knowledge Architecture
-[Where to find specific types of information in the codebase or knowledge base]
+[Where to find specific types of information — domain context, examples, decisions]
 
 # Working Rules
-- Before any multi-step build: create a verification plan
-- Flag ambiguity rather than assuming
-- Bias toward smaller, compartmentalized specs
-- [Add project-specific rules here]
+- Spec-first: before any multi-step task, draft a spec and get confirmation
+- Agile chunks: break large tasks into small, reviewable slices
+- Verification plan: before starting work, state evaluation criteria and checkpoints
+- Flag ambiguity: if anything is unclear, stop and ask rather than assuming
+- [Project-specific rules here]
+
+# Guardrails
+- Always do: [list]
+- Ask first: [list]
+- Never do: [list — these must also be enforced by tool-level hooks, not just listed here]
 ```
 
-**Prompt to generate a config file:**
+**Prompt to generate a config file from scratch:**
+> *"Based on what I've described about my project, generate an agent config file.
+> Use the Karpathy method structure: workspace overview, working rules (spec-first,
+> agile chunks, verification checkpoints, flag ambiguity), runbooks section, knowledge
+> architecture section, and guardrails classified into always-do / ask-first / never-do."*
 
-> "Based on what I've told you about my project, generate an agent config file
-> (e.g. AGENT.md). Include: workspace overview, working rules that enforce the
-> Karpathy method (spec-first, agile chunks, verification checkpoints), and
-> placeholder sections for skills and knowledge architecture."
+**If the user has no existing project context**, generate a minimal starter config
+with placeholder sections and explain what to fill in.
 
-### Step 2 — LLM Knowledge Base
+### Step 2 — Knowledge base
 
-A structured folder of your own data — your moat.
+A structured folder of domain-specific data the AI can navigate — your moat.
+Your data is what other people using the same base model don't have.
 
 ```
 knowledge/
-├── README.md          ← tells the agent what's here and how to navigate it
-├── domain/            ← context about your specific field/product
-├── examples/          ← past outputs to use as reference/format benchmarks
-├── decisions/         ← key decisions made and why (prevents re-litigating)
-└── templates/         ← reusable formats for common outputs
+├── README.md          ← index: what's here and when the agent should read it
+├── domain/            ← field/product context the AI won't have from training
+├── examples/          ← past outputs used as format benchmarks
+├── decisions/         ← key decisions made and why (prevents re-litigating them)
+└── templates/         ← reusable output formats
 ```
 
-Instruct the agent to consult the README before any task that might need domain context.
+The README is critical — without it, the AI doesn't know what to look for or when.
+It should answer: *"Given task X, which files here are relevant?"*
 
-### Step 3 — Custom Skills / Runbooks
+If the user has no knowledge base yet, suggest starting with just two files:
+`knowledge/README.md` and `knowledge/examples/` with one past output.
 
-If you plan to do something repeatedly, encode it as a runbook (a handbook for that task).
+### Step 3 — Runbooks
 
-Rule of thumb: **if you've corrected the AI on the same thing twice, write a runbook.**
+A runbook is a reusable handbook for a specific repeated task. It encodes your
+corrections so you don't have to make them again.
 
-Each runbook should contain:
-- When to use it (trigger conditions)
-- Step-by-step instructions
-- Output format / template
-- Common failure modes to avoid
+**Rule of thumb: if you've corrected the AI on the same thing twice, write a runbook.**
 
-Runbooks compound — the more you use them, the more you'll find where to improve them.
+Runbook structure:
+
+```markdown
+# [Task Name] Runbook
+
+## When to use this
+[Trigger conditions — be specific so the AI knows when to apply it]
+
+## Steps
+[Numbered, concrete instructions]
+
+## Output format
+[Template or example of what the final output should look like]
+
+## Common failure modes
+[Things the AI gets wrong on this task and how to avoid them]
+```
+
+If the user says they have no repeated tasks yet, ask: *"What's one thing you've had
+to re-explain or correct in the last week?"* That's the first runbook.
+
+Runbooks compound — the more you use them, the more gaps you'll find to fix.
 
 ### Step 4 — Guardrails (Three Buckets)
 
-Classify every action the AI might take into one of three buckets:
+Every action the AI might take falls into one of three buckets:
 
-| Bucket | Meaning | Implementation |
+| Bucket | Meaning | How to enforce |
 |---|---|---|
-| **Always do** | Autopilot — no confirmation needed | Note in agent config |
-| **Ask first** | Needs a quick check before proceeding | Note in agent config |
-| **Never do** | Critical — cannot be wrong | **Tool-level hook** |
+| **Always do** | Run on autopilot, no confirmation | List in agent config |
+| **Ask first** | Pause and confirm before proceeding | List in agent config |
+| **Never do** | Cannot be wrong — critical | **Tool-level hook** (not just config) |
 
-> ⚠️ Agent config rules are guides, not hard rules — the AI can still ignore them.
-> For things that are critical not to get wrong, use pre-tool-use hooks (supported
-> by most agentic tools) that enforce the rule at the tool level, not the prompt level.
+> ⚠️ Agent config rules are instructions, not constraints. The AI can still ignore
+> them under the right conditions. For anything in the **Never do** bucket, implement
+> a pre-tool-use hook that blocks the action at the tool level — before the AI can
+> execute it, regardless of what the prompt says.
 
-**Prompt to audit guardrails:**
-
-> "Review my project and help me classify the AI agent's potential actions into three
-> buckets: always do, ask first, never do. For 'never do' items, suggest what
-> tool-level hook I should implement to enforce them."
+**Prompt to audit and classify guardrails:**
+> *"Review my project description and classify every action the AI agent might take
+> into three buckets: always do, ask first, never do. For each 'never do' item,
+> describe what tool-level hook would enforce it mechanically."*
 
 ---
 
 ## Full Walkthrough Flow
 
-When the user wants the complete method applied to their project:
+When the user wants the complete method applied end-to-end:
 
-1. **Layer 1**: Interview → extract goal → draft spec → user verifies key decisions
-2. **Layer 2**: Define evaluation criteria → identify external signals → add verification checkpoint to spec
-3. **Layer 3**: Generate agent config → outline knowledge base structure → identify recurring tasks that need runbooks → classify guardrails
+**Step 1 — Layer 1**: Run interview (3 questions max) → produce spec artifact → user confirms or corrects
 
-Produce outputs in this order:
-1. Spec document (Layer 1 output)
-2. Verification addendum to spec (Layer 2 output)
-3. Agent config file (Layer 3 output)
+**Step 2 — Layer 2**: Derive evaluation criteria from spec → append Verification Plan section → identify external signals → user confirms
 
-Present each one for user review before proceeding to the next.
+**Step 3 — Layer 3**: Generate agent config file → outline knowledge base structure → identify first runbook from repeated corrections → classify guardrails into three buckets
+
+**Artifacts to deliver, in order:**
+1. `spec.md` — goal, context, scope, success criteria, key decisions
+2. Verification Plan appended to spec
+3. Agent config file (named for their tool)
+
+Present each artifact before moving to the next. After each, ask:
+*"Does this look right, or should we adjust anything before continuing?"*
+
+**After all three are delivered**, close with:
+> *"These three artifacts are your starting point. The environment compounds over
+> time — add to the runbooks when you catch a repeated correction, extend the
+> knowledge base when you find the AI missing domain context, and tighten the
+> guardrails when something goes wrong. The system gets better every time you use it."*
