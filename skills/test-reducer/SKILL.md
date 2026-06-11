@@ -41,7 +41,7 @@ shrinkray --no-clang-delta ./interestingness.sh program.c
 ```
 
 Other tools: `creduce` (C/C++, language-aware), `cvise` (creduce successor),
-`ddmin` (original algorithm, good reference implementation).
+`ddmin` (foundational algorithm; see Further Reading for the paper).
 
 **What reducers operate on:** Shrink Ray works at multiple levels — byte ranges,
 lines, tokens, and syntax-aware C/C++ constructs (enabled by default; disable
@@ -54,14 +54,23 @@ to hex/base64 text, or use a domain-specific reducer.
 ## Writing Interestingness Tests
 
 ### Template (shell)
+
+This template checks that a specific string appears in program output
+(stdout+stderr). For crash-only detection (exit code only), omit the grep
+and just check `rc`.
+
 ```sh
 #! /bin/sh
 # Do NOT use set -eu — the program under test exits non-zero intentionally,
 # and set -e will abort the script before you can inspect the result.
+#
+# Use a full path for pre-existing binaries: Shrink Ray cd's into a temp
+# directory per test, so ./my_program won't resolve unless it's compiled
+# in-place. Use /full/path/to/my_program or ensure it's on PATH.
 
-output="$(timeout 2s ./my_program "$1" 2>&1)"
+output="$(timeout 2s /full/path/to/my_program "$1" 2>&1)"
 rc=$?
-[ "$rc" -ne 124 ] || exit 1          # timed out (GNU timeout) → uninteresting
+[ "$rc" -ne 124 ] || exit 1          # timed out (GNU coreutils timeout) → uninteresting
 printf '%s\n' "$output" | grep -q "expected error string" || exit 1
 exit 0
 ```
@@ -72,6 +81,9 @@ Key points:
   `timeout(1)` convention; verify on your platform if using macOS/BSD.
 - Use `printf '%s\n'` instead of `echo` for portability when output may
   start with `-` or contain escape sequences.
+- **Always use full paths** for pre-existing binaries. Shrink Ray `cd`s into
+  a temp directory before calling your script. Relative paths like `./my_program`
+  only work for binaries compiled *inside* the test (see C example below).
 
 ### The Five Rules
 
@@ -124,7 +136,7 @@ This is the most common first obstacle. Diagnose with `bash -x ./interestingness
 
 | Cause | Fix |
 |---|---|
-| Hardcoded absolute paths absent from temp dir | Use paths relative to `$1`, or copy needed files in at the top of the script |
+| Relative path to binary not found in temp dir | Use full paths for pre-existing binaries |
 | Script assumes CWD contains helper binaries | Use full paths; or `export PATH` to include the binary's directory |
 | `set -e` firing on the program's non-zero exit | Remove `set -eu` from the test |
 | Over-strict check that the original doesn't satisfy | Run manually to confirm it exits 0 |
@@ -144,10 +156,12 @@ trap 'rm -f "$t"' EXIT
 
 i=5
 while [ "$i" -gt 0 ]; do
-  python3 "$1" > "$t" 2>&1
+  timeout 5s python3 "$1" > "$t" 2>&1
   rc=$?
-  # rc=127 means python3 not found — not a real match
-  if [ "$rc" -ne 0 ] && [ "$rc" -ne 127 ] && grep -q "ZeroDivisionError" "$t"; then
+  # rc=124: timed out (non-terminating candidate) → not a real match
+  # rc=127: python3 not found → not a real match
+  if [ "$rc" -ne 0 ] && [ "$rc" -ne 124 ] && [ "$rc" -ne 127 ] \
+      && grep -q "ZeroDivisionError" "$t"; then
     exit 0
   fi
   i=$((i-1))
@@ -158,8 +172,8 @@ This gets the reducer moving. Often it accidentally eliminates the nondeterminis
 entirely as a side-effect of simplification.
 
 > Use `$rc -ne 0` (any non-zero exit) rather than `-eq 1` unless you need
-> to distinguish specific exit codes. Also guard against `rc=127`
-> (command not found) which would otherwise be a false positive.
+> to distinguish specific exit codes. Always guard against `rc=124` (timeout)
+> and `rc=127` (command not found), which would otherwise be false positives.
 
 ### Strategy B — "Every run in N tries" (strict, locks in determinism)
 ```sh
@@ -169,9 +183,10 @@ trap 'rm -f "$t"' EXIT
 
 i=5
 while [ "$i" -gt 0 ]; do
-  python3 "$1" > "$t" 2>&1
+  timeout 5s python3 "$1" > "$t" 2>&1
   rc=$?
-  if [ "$rc" -eq 0 ] || [ "$rc" -eq 127 ] || ! grep -q "ZeroDivisionError" "$t"; then
+  if [ "$rc" -eq 0 ] || [ "$rc" -eq 124 ] || [ "$rc" -eq 127 ] \
+      || ! grep -q "ZeroDivisionError" "$t"; then
     exit 1
   fi
   i=$((i-1))
@@ -207,7 +222,13 @@ and a shared file for the running best (acknowledged racy — acceptable in prac
 ```sh
 #! /bin/sh
 # No set -eu — interpreter exits non-zero intentionally
-# Requires interpreter to be on PATH or use a full path below
+# Use a full path: Shrink Ray cd's into a temp dir per test.
+#
+# Adjust the redirect below to match where your tool writes its trace:
+#   stdout only:          /path/to/interpreter "$1" > "$trace"
+#   stderr only:          /path/to/interpreter "$1" 2> "$trace"
+#   both:                 /path/to/interpreter "$1" > "$trace" 2>&1
+#   separate log file:    YKD_LOG="$trace:jit-asm" /path/to/interpreter "$1"
 
 trace="$(mktemp)"
 trap 'rm -f "$trace"' EXIT
@@ -226,7 +247,9 @@ if [ ! -f /tmp/global_best ]; then
 fi
 old_len="$(cat /tmp/global_best)"
 
-# Reject if trace got longer (equal is fine — lets the input still shrink)
+# Reject if trace got longer (equal is fine — lets the input still shrink).
+# Note: /tmp/global_best has a write race under parallel execution. The worst
+# case is a few backwards steps in the metric (not a correctness failure).
 if [ "$new_len" -gt "$old_len" ]; then
   exit 1
 fi
@@ -236,13 +259,13 @@ exit 0
 ```
 
 **Caveats:**
-- `/tmp/global_best` has a write race under parallel execution. Accept this —
-  the metric may occasionally move in the wrong direction, but in practice
-  the approach still converges.
+- `/tmp/global_best` has a write race under parallel execution. In the worst
+  case, two concurrent processes both read the same old value, then one writes
+  a smaller metric and the other overwrites it with a slightly larger one.
+  This causes a few backwards steps in the metric, not a correctness failure.
+  Accept it — the approach converges in practice.
 - May produce a slightly *larger* input file in exchange for a much better
   secondary metric. That's the point.
-- Use a full path for your interpreter (e.g. `/usr/local/bin/myinterp`) since
-  Shrink Ray `cd`s into a temp directory where `./interpreter` won't exist.
 
 **Adapt the metric:**
 - Wall time: `{ time /path/to/program "$1" 2>/dev/null; } 2>&1 | grep real | awk '{print $2}'`
@@ -265,6 +288,8 @@ exit 0
 | Secondary metric explodes | Reducer optimizing length only | Switch to global counter technique |
 | `set -e` aborts test early | Shell `-e` fires on program's non-zero exit | Remove `set -eu` from interestingness test |
 | `rc=127` false positives | Command not found treated as interesting | Guard with `[ "$rc" -ne 127 ]` |
+| `rc=124` false positives | Timeout treated as interesting | Guard with `[ "$rc" -ne 124 ]` |
+| Binary not found in temp dir | Relative path to pre-existing binary | Use full path or add directory to PATH |
 
 ---
 
@@ -299,14 +324,17 @@ file as the new input.
 
 ## Example: C Compiler Differential Bug
 
+Here `./slow_$$` and `./fast_$$` are compiled *inside* the test, so they land
+in Shrink Ray's temp directory and are safe to reference with relative paths.
+
 ```sh
 #! /bin/sh
 # No set -eu — compiled binaries may exit non-zero
 trap 'rm -f slow_$$ fast_$$' EXIT
 
 # Explicit || exit 1 per step; no set -e / set +e toggling needed
-cc -std=c99 -O2 -DFAST=0 "$1" -o slow_$$ 2>/dev/null || exit 1
-cc -std=c99 -O2 -DFAST=1 "$1" -o fast_$$ 2>/dev/null || exit 1
+timeout 30s cc -std=c99 -O2 -DFAST=0 "$1" -o slow_$$ 2>/dev/null || exit 1
+timeout 30s cc -std=c99 -O2 -DFAST=1 "$1" -o fast_$$ 2>/dev/null || exit 1
 
 slow_out="$(timeout 1s ./slow_$$)" || exit 1
 fast_out="$(timeout 1s ./fast_$$)" || exit 1
@@ -318,9 +346,9 @@ test "$fast_out" != "expected_hash" || exit 1
 Notes:
 - `$$` in binary names prevents collision under parallel reduction.
 - `trap ... EXIT` ensures cleanup even on early exit or signal.
+- `timeout 30s cc` guards against cc hanging on pathological reduced inputs.
 - Replace `expected_hash` with the actual output of the slow build on the
   original input.
-- Shrink Ray `cd`s into a temp dir per test, so `./slow_$$` resolves correctly.
 - `!=` in `test` is not strictly POSIX but works on all common `/bin/sh`
   implementations. Use `[ ! "$fast_out" = "expected_hash" ]` for strict portability.
 
@@ -340,10 +368,10 @@ input_file = sys.argv[2]
 output_file = input_file + ".reduced"
 
 with open(input_file) as f:
-    cur = [l.rstrip('\n') for l in f]
+    cur = [l.rstrip('\r\n') for l in f]  # handles both LF and CRLF
 
 def is_interesting(lines):
-    src = '\n'.join(lines)
+    src = '\n'.join(lines) + '\n'   # preserve trailing newline
     suffix = os.path.splitext(input_file)[1]
     fd, path = tempfile.mkstemp(suffix=suffix)
     try:
@@ -362,11 +390,12 @@ while i < len(cur):
     cnd = cur[:i] + cur[i+1:]
     if is_interesting(cnd):
         cur = cnd
-        # Save progress after each successful reduction
+        # Save progress after each successful reduction so an interrupted
+        # run can be resumed from <input>.reduced
         with open(output_file, 'w') as f:
-            f.write('\n'.join(cur))
-        # Don't advance i: the line at position i is now the old i+1,
-        # so we try removing it next iteration
+            f.write('\n'.join(cur) + '\n')
+        # Don't advance i: the line now at position i is the old i+1;
+        # try removing it on the next iteration
     else:
         i += 1
 
@@ -374,10 +403,8 @@ print('\n'.join(cur))
 ```
 
 This is the ddmin forward-scan loop. Single-threaded and slow on large inputs,
-but correct and dependency-free. Progress is saved after each reduction so
-an interrupted run can be resumed from `<input>.reduced`. For more reductions,
-restart `i=0` each time a reduction succeeds (~10× more iterations but finds
-disjoint deletions).
+but correct and dependency-free. For more reductions, reset `i = 0` each time
+a reduction succeeds (~10× more iterations but finds disjoint deletions).
 
 ---
 
@@ -385,6 +412,6 @@ disjoint deletions).
 
 - [Shrink Ray](https://github.com/DRMacIver/shrinkray) — recommended reducer
 - [creduce paper](https://www.cs.utah.edu/~regehr/papers/pldi11-preprint.pdf) — original influential reducer
-- [ddmin](https://www.st.cs.uni-saarland.de/publications/files/hildebrandt-issta-2000.pdf) — foundational algorithm
+- [ddmin paper](https://www.st.cs.uni-saarland.de/publications/files/hildebrandt-issta-2000.pdf) — foundational algorithm
 - [Using reducers as fuzzers](https://blog.regehr.org/archives/1284) — surprising dual use
 - [Cause reduction](https://users.cs.utah.edu/~regehr/papers/mintest.pdf) — theoretical basis for secondary-metric steering
