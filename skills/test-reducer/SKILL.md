@@ -43,6 +43,12 @@ shrinkray --no-clang-delta ./interestingness.sh program.c
 Other tools: `creduce` (C/C++, language-aware), `ddmin` (original algorithm),
 `cvise` (creduce successor).
 
+**What reducers operate on:** Shrink Ray works at multiple levels — byte ranges,
+lines, tokens, and (with `--clang-delta`) syntax-aware constructs. For structured
+inputs (JSON, YAML, protobuf), either reduce the text representation directly or
+pre-process to a flat text form first. Binary inputs need special handling (convert
+to hex/base64 text, or use a domain-specific reducer).
+
 ---
 
 ## Writing Interestingness Tests
@@ -50,13 +56,17 @@ Other tools: `creduce` (C/C++, language-aware), `ddmin` (original algorithm),
 ### Template (shell)
 ```sh
 #! /bin/sh
-set -eu
+# No set -eu here — the program under test exits non-zero intentionally
 # Run the program on the candidate input ($1)
-output="$(timeout 2s ./my_program "$1" 2>&1)" || exit 1
+output="$(timeout 2s ./my_program "$1" 2>&1)" || true
 # Check the error is still present
 echo "$output" | grep -q "expected error string" || exit 1
 exit 0
 ```
+
+> **Note:** Avoid `set -eu` at the top of interestingness tests. The programs
+> you're testing exit non-zero by design, and `set -e` will abort the script
+> before you can inspect the result.
 
 ### The Four Rules
 
@@ -88,8 +98,16 @@ If the reducer stalls without making progress, non-termination is almost certain
 
 **4. Handle parallelism.**
 Shrink Ray runs interestingness tests in parallel, each in its own temp directory.
-Avoid writing to shared paths inside the test (e.g., `./slow`, `./fast` as output
-binaries). Use `$1`-relative temp files or Shrink Ray's temp dir.
+Avoid writing to shared paths inside the test. Use `$$` (shell PID) or `mktemp`
+to create unique filenames for build artifacts, and clean them up at exit.
+
+**5. Suppress subcommand output.**
+If your test builds or runs programs, redirect their stdout/stderr to `/dev/null`
+or a temp file. Stray output confuses the reducer's progress display and can
+cause subtle interestingness false-positives.
+```sh
+cc -std=c99 t.c -o my_binary 2>/dev/null || exit 1
+```
 
 ---
 
@@ -104,7 +122,8 @@ i=5
 while [ "$i" -gt 0 ]; do
   t="$(mktemp)"
   python3 "$1" > "$t" 2>&1
-  if [ "$?" -eq 1 ] && grep -q "ZeroDivisionError" "$t"; then
+  rc=$?
+  if [ "$rc" -ne 0 ] && grep -q "ZeroDivisionError" "$t"; then
     rm "$t"; exit 0
   fi
   rm "$t"
@@ -115,6 +134,9 @@ exit 1
 This gets the reducer moving. Often it accidentally eliminates the nondeterminism
 entirely as a side-effect of simplification.
 
+> **Exit code:** Use `$rc -ne 0` (any non-zero exit), not `-eq 1`, unless you
+> specifically need to distinguish exit codes. Captures crashes, signals, etc.
+
 ### Strategy B — "Every run in N tries" (strict, locks in determinism)
 ```sh
 #! /bin/sh
@@ -122,7 +144,8 @@ i=5
 while [ "$i" -gt 0 ]; do
   t="$(mktemp)"
   python3 "$1" > "$t" 2>&1
-  if [ "$?" -ne 1 ] || ! grep -q "ZeroDivisionError" "$t"; then
+  rc=$?
+  if [ "$rc" -eq 0 ] || ! grep -q "ZeroDivisionError" "$t"; then
     rm "$t"; exit 1
   fi
   rm "$t"
@@ -158,10 +181,12 @@ Use a shared counter file as a side-channel to steer the reducer:
 
 ```sh
 #! /bin/sh
-set -eu
+# No set -eu — interpreter exits non-zero intentionally
 
-# Primary check: must still crash
-./interpreter "$1" 2>/tmp/trace_output || exit 1
+# Primary check: must crash (non-zero exit)
+./interpreter "$1" 2>/tmp/trace_output
+rc=$?
+[ "$rc" -ne 0 ] || exit 1   # exit 1 (uninteresting) if it did NOT crash
 
 # Secondary metric: number of lines in trace output
 new_len="$(wc -l < /tmp/trace_output | tr -d ' ')"
@@ -186,9 +211,9 @@ exit 0
 - Highly effective in practice despite the unsoundness — use it without guilt.
 
 **Adapt the metric** by replacing the `wc -l` line with whatever proxy fits:
-- Wall time: `{ time ./program "$1"; } 2>&1 | grep real | awk '{print $2}'`
+- Wall time: capture via `{ time ./program "$1" 2>/dev/null; } 2>&1 | grep real | awk '{print $2}'`
 - Memory peak: wrap with `/usr/bin/time -v` and extract "Maximum resident"
-- Nondeterminism frequency: run N times and count how often the error appears
+- Nondeterminism frequency: run N times, count how often the error appears, store count
 
 ---
 
@@ -199,8 +224,9 @@ exit 0
 | Empty input passes interestingness test | Over-reduction / test too permissive | Tighten the test; add positive anchors |
 | No progress at all | Non-termination in reduced candidates | Add `timeout`; check loop terminators |
 | Reduction stops early, bug gone | Test accepted a different code path | Add stricter output checks |
-| Reduction oscillates | Parallel race on shared files | Move shared state out or serialize |
+| Reduction oscillates | Parallel race on shared files | Use `$$`/`mktemp` for build artifacts |
 | Secondary metric explodes | Reducer optimizing length, ignoring metric | Switch to global counter technique |
+| `set -e` aborts test early | Program-under-test exits non-zero, triggers shell -e | Remove `set -eu` from interestingness test |
 
 ---
 
@@ -215,13 +241,11 @@ shrinkray --no-clang-delta ./test.sh input.c
 
 # Set parallelism explicitly
 shrinkray -j 8 ./test.sh input.txt
-
-# Resume from a previous partial reduction
-shrinkray --best input.reduced.txt ./test.sh input.txt
 ```
 
 Shrink Ray runs each test in its own temp directory automatically — no need to
-handle that in your interestingness test.
+handle that in your interestingness test. If you want to resume from a partial
+reduction, point it at the already-reduced output file as the new input.
 
 ---
 
@@ -229,12 +253,16 @@ handle that in your interestingness test.
 
 ```sh
 #! /bin/sh
-set -eu
+# No set -eu — binaries may exit non-zero
+set -e  # only for compilation failures — exit early if cc fails
 cp "$1" t.c
-cc -std=c99 -O2 -DFAST=0 t.c -o slow 2>/dev/null || exit 1
-cc -std=c99 -O2 -DFAST=1 t.c -o fast 2>/dev/null || exit 1
-slow_out="$(timeout 1s ./slow)" || exit 1
-fast_out="$(timeout 1s ./fast)" || exit 1
+# Use $$ to avoid collisions under parallel reduction
+cc -std=c99 -O2 -DFAST=0 t.c -o slow_$$ 2>/dev/null || exit 1
+cc -std=c99 -O2 -DFAST=1 t.c -o fast_$$ 2>/dev/null || exit 1
+set +e  # program outputs may be non-zero; don't abort
+slow_out="$(timeout 1s ./slow_$$)" || { rm -f slow_$$ fast_$$; exit 1; }
+fast_out="$(timeout 1s ./fast_$$)" || { rm -f slow_$$ fast_$$; exit 1; }
+rm -f slow_$$ fast_$$
 test "$slow_out" = "expected_hash" || exit 1
 test "$fast_out" != "expected_hash" || exit 1
 ```
