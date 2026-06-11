@@ -1252,6 +1252,11 @@ def main(
     ...
 ```
 
+**Always add `--verbose`, `--debug`, and `--log-file` CLI options** to every CLI project. These should be standard first-class options:
+- `--verbose` / `-v`: increase output verbosity (repeatable or level argument)
+- `--debug`: enable debug-level logging and stack traces
+- `--log-file` / `-l`: write logs to a file path
+
 Ensure `pyproject.toml` has `[project.scripts]` entry:
 
 ```toml
