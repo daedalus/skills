@@ -29,6 +29,18 @@ Every optimization target gets exactly three files (or one ASSET that's itself m
 
 State this division explicitly to the user before touching anything: "I can only edit the asset. The instructions and the scoring method are yours — I'll read them, never rewrite them."
 
+### When there's no executable scorer: judged scoring
+
+Sometimes the metric can't be computed by a script or pulled from an API — e.g. "would this skill description correctly trigger?", "is this DM script on-brand?", or any question that needs a judgment call rather than a measurement. The loop still works, but the scoring file has to be built differently so it stays objective:
+
+1. Freeze a fixed eval set (a list of concrete cases with their correct/expected answer) into a file *before* scoring anything — e.g. `eval_set.json`.
+2. Freeze the judging rule too (exactly what you're allowed to look at, and the criteria for a yes/no or pass/fail call) — write it into `scoring.md` alongside the eval set.
+3. For each round, produce a judgments file recording your call on every case, then run a small locked script that computes the aggregate (accuracy, pass rate, average rubric score) from judgments vs. expected answers — never eyeball the percentage.
+4. Never re-judge a case after seeing how the rest of the round scored, and never add or remove eval cases mid-run.
+5. Flag the limitation out loud: if the same model is both the author of the asset and the judge of the eval, near-perfect scores partly reflect self-consistency, not independent validation. Say so in the log rather than presenting it as a clean win. A genuinely independent check (a separate model call, a fresh set of human-labeled cases, or real production outcomes) is stronger evidence than a self-judged number.
+
+Use `assets/eval_set_template.json` and `assets/judged_score.py` as the skeleton for this pattern.
+
 ## Step 2: Interview to plug everything in
 
 Ask, don't assume:
