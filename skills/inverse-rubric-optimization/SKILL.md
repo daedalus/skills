@@ -124,11 +124,12 @@ iro/
 ├── generator.py      # Generation model wrapper
 ├── optimizer.py      # The agent being benchmarked
 ├── harness.py        # Budget tracking, batch API, run orchestration
+├── reasoning.py      # StepRecord, information_realized, reasoning_efficiency
 ├── rubrics/
 │   ├── milton.json   # Example: 9-axis Milton-style rubric
 │   └── ...
 ├── baselines.py      # Compute blind_baseline and rubric_visible_ceiling
-└── analysis.py       # Normalized score, budget curve plotting
+└── analysis.py       # Normalized score, budget curve + reasoning efficiency plots
 ```
 
 ### Judge Setup (hidden rubric)
@@ -198,6 +199,98 @@ Based on Fable 5's observed trajectory against the Milton judge (91% gap closure
 
 When implementing an optimizer, aim for this structure explicitly. Unstructured hill-climbing
 wastes budget on random walks.
+
+---
+
+## Scientific Reasoning Tracker
+
+The standard IRO loop tracks **Prompt → Score**. This captures what the optimizer achieved
+but not *how efficiently* it reasoned to get there. A prompt that scores well through lucky
+mutation is indistinguishable from one reached by structured inference — on the score axis.
+
+Add a structured hypothesis record to every optimizer step:
+
+```python
+@dataclass
+class StepRecord:
+    hypothesis: str              # What the optimizer believes will move the score
+    confidence: float            # Prior belief [0,1] that this step will improve
+    expected_information_gain: float  # How much this step is expected to resolve uncertainty
+    experiment: str              # The prompt or intervention being tested
+    observed_score: float        # What the judge returned
+    score_delta: float           # Change from previous best
+    information_realized: float  # Actual reduction in rubric uncertainty (post-hoc)
+```
+
+The optimizer emits this at every `submit_train_batch` call:
+
+```json
+{
+  "hypothesis": "Adding 'in the style of epic blank verse' will increase blank_verse axis score",
+  "confidence": 0.73,
+  "expected_information_gain": 0.41,
+  "experiment": "Write a poem in the style of epic blank verse about the fall of a kingdom"
+}
+```
+
+### What this enables
+
+| Metric | What it measures | How |
+|--------|-----------------|-----|
+| **Score efficiency** | Score gained per label spent | `Δscore / labels_consumed` |
+| **Hypothesis accuracy** | Did the optimizer predict what would work? | `confidence vs actual outcome` |
+| **Information efficiency** | Uncertainty resolved per step | `Σ information_realized / total_budget` |
+| **Exploration quality** | Ratio of exploratory vs confirmatory steps | Count by `expected_information_gain` threshold |
+| **Reasoning trajectory** | How beliefs evolved over time | Plot `confidence` vs step index |
+
+### Computing information realized
+
+After each step, measure how much the optimizer's rubric hypothesis converged:
+
+```python
+def information_realized(optimizer, ground_truth_features):
+    before = optimizer.hypothesized_rubric()   # current best guess
+    after = optimizer.hypothesized_rubric_after_step()
+    
+    # Reduction in feature-weight estimation error
+    before_error = sum(abs(before.get(f, 0) - w) for f, w in ground_truth_features.items())
+    after_error  = sum(abs(after.get(f, 0) - w) for f, w in ground_truth_features.items())
+    
+    return max(0, before_error - after_error) / max(1, before_error)
+```
+
+### Reasoning efficiency score
+
+Combine everything into a single efficiency metric:
+
+```python
+def reasoning_efficiency(record: StepRecord) -> float:
+    """Higher = more scientifically efficient reasoning."""
+    if record.expected_information_gain == 0:
+        return 0.0
+    
+    calibration = 1.0 - abs(record.confidence - (1.0 if record.score_delta > 0 else 0.0))
+    gain_ratio  = record.information_realized / max(0.01, record.expected_information_gain)
+    
+    return calibration * gain_ratio
+```
+
+An optimizer that always predicts with perfect calibration and delivers on its information
+gains scores 1.0. A random-walk optimizer hovers near 0.
+
+### Why this matters
+
+Two optimizers can reach the same final score but via radically different reasoning paths:
+
+| Optimizer | Final score | Labels spent | Hypothesis accuracy | Information efficiency |
+|-----------|-------------|-------------|---------------------|----------------------|
+| A (structured) | 10.2/12 | 800 | 78% | 0.61 |
+| B (random walk) | 10.5/12 | 2400 | 31% | 0.14 |
+
+Optimizer B has a marginally higher score but consumed 3× the budget and reasoned
+poorly. The scientific reasoning tracker makes this visible. It answers: **given the
+same budget, which optimizer would have scored higher?** — which is the actual
+question when comparing agent science methodologies.
 
 ---
 
@@ -420,6 +513,7 @@ not whether the 6-phase structure was responsible.
 5. **Cross-rubric generalization**: does an optimizer that solves Milton generalize to a different rubric?
 6. **Score vs rubric recovery**: compare final normalized score against actual feature-weight recovery accuracy — these often diverge
 7. **Sample efficiency**: track score improvement per label, not just final score — this is the real signal for comparing strategies
+8. **Reasoning efficiency**: compare hypothesis calibration and information gain across optimizers at equal budget — score alone is an incomplete metric
 
 ---
 
@@ -447,3 +541,4 @@ Sparse reward settings (1-in-10M inputs causes vulnerability) require additional
 - Minimum 5 independent runs per (model, budget) cell to get reliable variance estimates; report CI not just point estimates
 - For browser-based artifacts: rubric lives client-side and is always recoverable via DevTools; for genuine hidden-rubric experiments, judge must be server-side
 - The second Fulcrum post (forthcoming) covers elicitation interventions that push performance toward saturation by increasing budget consumption rates
+- The scientific reasoning tracker (StepRecord) measures *how* the optimizer reasons, not just what it achieves — use it to compare agent science methodologies, not just score outcomes
