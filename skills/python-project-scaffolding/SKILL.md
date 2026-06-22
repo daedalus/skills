@@ -439,6 +439,10 @@ from <package_name> import <MainThing>
 
 Brief description of each public symbol.
 
+## Acknowledgments
+
+This project was developed by me with the assistance of AI coding tools used for code generation, refactoring, and review. I reviewed, tested, and take responsibility for the final implementation.
+
 ## Development
 
 ```bash
