@@ -1,4 +1,18 @@
+---
+name: codex-security-adapter
+description: Router that maps user security intent to specific files, scripts, and workflows inside the codex-security plugin. Guides any agent to find and invoke the right plugin files for security tasks — scans, threat models, validation, attack paths, triage, and tracking.
+tags:
+  - security
+  - scanning
+  - threat-model
+  - vulnerability
+---
+
 # Codex Security Adapter
+
+Caveat: while the Codex-security plugin is proprietary, it is open source and anyone can download it and use it. In this adapter we provide the reference for any agentic harness to be able to use it outside Codex. You may still need to install it through official channels.
+
+Always maintain TODOs.
 
 Guide any agent to find and invoke the right codex-security plugin files for security tasks. This skill is a **router** — it maps user intent to specific files, scripts, and workflows inside `~/.codex/.tmp/plugins/plugins/codex-security/`.
 
