@@ -81,3 +81,4 @@ Default to appending to `LEARNINGS.md` at the repo root if one already exists; o
 
 - If scope is ambiguous and a clarifying question gets answered with a principle instead of a menu pick, treat the principle as the actual spec — it's higher-signal than the options offered, not a non-answer to route around.
 - When packaging a skill with `skill-creator`'s `package_skill.py`, invoke it as `python3 -m scripts.package_skill <skill-dir> <output-path>` from within the skill-creator directory, and point output at a writable path — `/mnt/skills/**` is read-only.
+- Re-running this skill on a source that hasn't materially changed since the last pass should report no new findings rather than padding for another entry — an honest "nothing new" is a correct output, not a failure, and it's the signal to stop iterating rather than run again.
