@@ -76,3 +76,8 @@ Ask where this should live if it isn't obvious from context — common patterns 
 - Inline in a `SKILL.md` under a "Known pitfalls" or "Lessons" section, if this is feeding back into a skill file
 
 Default to appending to `LEARNINGS.md` at the repo root if one already exists; otherwise ask once rather than guessing a new convention.
+
+## Lessons
+
+- If scope is ambiguous and a clarifying question gets answered with a principle instead of a menu pick, treat the principle as the actual spec — it's higher-signal than the options offered, not a non-answer to route around.
+- When packaging a skill with `skill-creator`'s `package_skill.py`, invoke it as `python3 -m scripts.package_skill <skill-dir> <output-path>` from within the skill-creator directory, and point output at a writable path — `/mnt/skills/**` is read-only.
