@@ -27,6 +27,17 @@ Any time a change to a codebase does one or more of:
 
 If none of the above apply — e.g. a pure refactor, a bug fix with no new behavior, a test-only change — this skill doesn't need to run.
 
+## Integration with AGENTS.md
+
+If the project has an `AGENTS.md` (or `CLAUDE.md`, `COPILOT.md`, or similar agent instruction file), this skill should be referenced there so agents invoke it automatically. Add a rule like:
+
+```markdown
+## Validation gate
+Before merging any change that adds a new algorithm, scoring function, weight, or statistical technique, invoke the `validate-before-ship` skill. Log the result in `docs/VALIDATION_LOG.md`.
+```
+
+This ensures the validation check is part of the project's standard workflow, not dependent on someone remembering to trigger it.
+
 ## The checklist
 
 Work through these in order. Do not skip ahead because the code "looks right."
@@ -70,8 +81,13 @@ This isn't a call to slow down experimentation or gatekeep every commit behind a
 
 ## Validation log
 
-This section exists specifically so this skill doesn't repeat the mistake it documents. Every time this skill is actually invoked — checked against a real change, in a real review — add an entry below, whether or not it caught anything. A skill with an empty log after months of use is itself a finding: either it's not being invoked, or it's being invoked and never catching anything worth recording, and either case is worth knowing.
+Every time this skill is actually invoked — checked against a real change, in a real review — append an entry to the project's validation log, whether or not it caught anything. The log must live in the **project being validated**, never in this skill's directory. Write to `docs/VALIDATION_LOG.md` (create the directory and file if they don't exist). Do NOT write the log to the skill directory itself.
+
+A project with an empty validation log after months of use is itself a finding: either this skill isn't being invoked, or it's being invoked and never catching anything worth recording, and either case is worth knowing.
 
 Format: `date — what was checked — result (caught something / confirmed clean / skipped and why)`
 
-- *(no entries yet — add your first entry when this skill is applied to a real decision)*
+Example entry:
+```
+- 2026-07-09 — new diversity scoring function in `src/scoring.py` — caught inverted normalization; baseline outperformed by 12% after fix
+```
