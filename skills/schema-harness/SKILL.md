@@ -61,6 +61,14 @@ Concretely: prefer a probe that costs 1 real action and separates N≥2 live hyp
 
 A single mismatched transition during execution voids the rest of the committed plan — don't keep executing a plan built on a model that just failed. Return to `deliberate` with the mismatched transition as the counterexample to be explained (it constrains the next theory: "any candidate step() must reproduce exactly this transition").
 
+## "No plan found" is itself a signal
+
+If `run_backtest` is fully green against everything recorded so far but `run_bfs` (or equivalent search) returns **no plan at all**, don't treat that as just a search failure — it usually means the certified model is missing a mechanism, not that the goal is unreachable. A model can backtest perfectly while still being incomplete, simply because history never touched the missing piece. Absence of a plan under a clean-backtesting model is exactly the moment to go probe whichever observed-but-unexplained element (a distinct color, an untouched object, an odd tile) hasn't been interacted with yet, rather than re-searching the same certified-but-incomplete model harder.
+
+## Locate where a suspected mechanism actually fires before designing the probe
+
+Before committing a "discriminating" action meant to isolate a suspected mechanism, check *where in the state transition* it's hypothesized to trigger — on entry to a cell, only after a further action from that cell, on exit, etc. A probe designed around the wrong triggering point won't isolate what it's meant to: e.g. assuming an agent can "stand on" a special tile and then separately choose to interact with it, when the environment actually resolves the entire effect atomically on entry, with no intermediate observable state. If a probe's result doesn't produce the expected mismatch, check whether the discriminating transition already happened one action earlier (or later) than assumed before concluding the current model is correct.
+
 ## Failure modes to watch for (from case-study evidence)
 
 - **Epicycles**: patching a rule with case-specific exceptions that happen to fit the data so far but don't reflect the true mechanism. Detectable when two different real trajectories produce the *same* signature that the epicycle can't jointly explain — this requires exact total recall of full histories, which is why the Timeline must be complete and exact, not summarized.
