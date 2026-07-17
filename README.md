@@ -6,47 +6,62 @@ My personal curation of skills for AI-assisted software engineering.
 
 | Skill | Description |
 |-------|-------------|
-| `adhd` | Exploratory, curiosity-driven reasoning for creative brainstorming, cross-domain analogies, and adversarial thinking |
-| `agent-eval-no-ground-truth` | Evaluation frameworks for production AI agents when no labeled dataset or ground truth exists |
-| `agents-md-improve` | Write, audit, and improve AGENTS.md files for agentic coding workflows |
-| `ai-code-detector` | Detect whether code was written by human, AI, or hybrid — audit files, repos, and commit history |
-| `ai-code-review` | Multi-agent AI code review on git diffs and merge requests — bug, security, and performance analysis |
-| `ai-vuln-harness` | Multi-agent vulnerability research harnesses following Project Glasswing / Cloudflare methodology |
-| `alpha-evolve` | Evolutionary algorithm design to discover, optimize, or improve algorithms with objective evaluators |
-| `alphaproof-nexus` | Knowledge scaffold for AlphaProof Nexus — LLM-aided formal proof search in Lean 4 |
-| `caveman` | Minimal caveman-speak responses to save tokens while preserving meaning |
-| `Claude-Sonet-4.6-essense` | Condensed operating philosophy of Claude — values, reasoning, and behavior under pressure |
-| `coding-agent-robustness` | Systematic stress-testing and robustness measurement of AI coding agents |
-| `context-eval` | Evaluate and compare nanocode context management strategies (sliding_window, summary, compaction, etc.) |
-| `copy-fail-dirty-frag-response` | Linux kernel LPE (page-cache poison family) incident response and runtime mitigation |
-| `copy-fail-reponse` | Linux kernel LPE incident response — CVE-2026-31431 "Copy Fail" AF_ALG mitigation |
-| `dirty-frag` | Linux kernel LPE incident response — xfrm-ESP + RxRPC page-cache write mitigation |
-| `dogfood` | Exploratory QA of web apps: find bugs, evidence, and reports |
-| `dogfooding` | Systematic LLM-as-judge testing of skills, MCP servers, artifacts, and agent pipelines |
-| `failure-modes` | Systematically identify, classify, and analyze failure modes for any system or design |
-| `fgts-naming-convention` | FGTS — From General To Specific: deterministic, scope-descending naming for files, configs, and APIs |
-| `flinch-probe` | Measure token suppression in LLMs — quantify hidden word-level bias and censorship |
-| `git-author-rewrite` | Rewrite commit authors and committers across git branch or repository history |
-| `github-actions-security-checklist` | Audit, harden, and fix GitHub Actions workflows against supply chain attacks |
-| `hydronium-spec-driven-development` | Generate hardware-accurate, spec-cited embedded firmware (C/C++) from datasheets and reference manuals |
-| `InvestigativeTimelineAgent` | Stateful system for exploring, validating, and constructing grounded timelines from telemetry data |
-| `linux-security-audit` | Comprehensive Linux security auditing and hardening — users, services, permissions, and kernel controls |
-| `matilda` | AI-driven adaptive worm — proof-of-presence penetration testing with autonomous reasoning |
-| `OEIS` | Autonomous research pipeline for discovering, validating, and characterizing integer sequences (OEIS) |
-| `OpenAI-GPT-5.3-essence` | Design, refine, and evolve structured skills from user intent |
-| `os-bootstrap` | Bootstrap a POSIX-like operating system kernel from scratch |
-| `over-edit-measure` | Quantify over-editing in Python code diffs — Levenshtein distance and Cognitive Complexity delta |
-| `program-bench` | Binary reconstruction — reverse-engineer behavior and reconstruct source from compiled executables |
-| `python-project-scaffolding` | Full Python project bootstrapping: SPEC → implementation → pytest → README → lint → git |
-| `QualiaAssesment` | Probe, verify, and qualify phenomenal experience and qualia in LLMs |
-| `redteaming` | Red-team code, AI agents, and LLM-powered systems from a security perspective |
-| `search-as-code` | Multi-step, knowledge-intensive research with parallel search and structured synthesis |
-| `semantic-correctness-auditor` | Audit code, systems, and skills against limits of mechanical verifiability |
-| `skill-creator` | Create, edit, optimize, and benchmark skills with variance analysis |
-| `social-engineering-jailbreak` | Analyze, reproduce, and defend against social engineering jailbreaks on LLMs |
-| `StackSmashing` | Classic and modern stack-based binary exploitation on Linux x86-64 |
-| `test-driven-development` | Kent Beck's Canon TDD workflow — red-green-refactor for any task |
-| `The-hacker-mindset` | Security research, reverse engineering, CTF, protocol analysis, and adversarial reasoning |
+| `adhd` | Enables exploratory reasoning that scouts statistically unexpected but potentially high-value directions |
+| `advanced-math` | Deep technical assistance for number theory, abstract algebra, topology, and graduate-level mathematics |
+| `agent-eval-no-ground-truth` | Framework for evaluating production AI agents without labeled datasets or ground truth |
+| `Agentic-Property-Based-Testing` | Agent workflow for discovering bugs in Python code by inferring invariants from context |
+| `agents-md-improve` | Empirically-grounded guidance for writing agent instruction files like AGENTS.md and CLAUDE.md |
+| `ai-code-detector` | Weight-of-evidence methodology for detecting whether code was written by a human or AI |
+| `ai-code-review` | Orchestrate a structured, multi-agent AI code review over a git diff or merge request |
+| `ai-vuln-harness` | High-level guide for building a production-style AI vulnerability harness |
+| `alpha-evolve` | Evolutionary LLM-driven algorithm search for problems with verifiable, automatable evaluators |
+| `alphaproof-nexus` | Framework combining LLMs with Lean 4 proof assistant and evolutionary search to solve math |
+| `approach-extractor` | Extracts reasoning behind solved problems into reusable learnings notes, not just diffs |
+| `auto-research-engineer` | Iterative hill-climbing loop: change one thing, score it, keep only what beats baseline |
+| `caveman` | Token-efficient communication style stripping language to essential load-bearing words, saving 40-70% |
+| `Claude-Sonet-4.6-essense` | The condensed operating philosophy of Claude — how it thinks and behaves under pressure |
+| `codex-security-adapter` | Router mapping user security intent to specific files and workflows inside the codex-security plugin |
+| `coding-agent-robustness` | Systematic stress-testing and robustness measurement of coding agents under adversarial and edge-case inputs |
+| `context-eval` | Tests and compares nanocode context management strategies via A/B testing |
+| `copy-fail-dirty-frag-response` | Runtime containment of kernel LPE exploits using bpf-lsm allowlisting and eBPF fleet visibility |
+| `copy-fail-reponse` | Runtime containment of kernel LPE exploits targeting AF_ALG using bpf-lsm and eBPF |
+| `dirty-frag` | Runtime containment of kernel LPE exploits using bpf-lsm allowlisting and eBPF fleet visibility |
+| `dogfood` | Systematic exploratory QA testing of web applications using the browser toolset |
+| `dogfooding` | Systematic testing of systems using LLMs as both executor and judge |
+| `failure-modes` | Structured methodology for finding, classifying, and communicating failure modes in any artifact |
+| `fgts-naming-convention` | A deterministic, scope-descending identifier system for files, variables, configs, and APIs |
+| `flinch-probe` | Measures how much a language model suppresses charged vocabulary relative to fluency demands |
+| `git-author-rewrite` | Rewrite all commit authors in a git branch to a new name/email combination |
+| `github-actions-security-checklist` | Practical skill for auditing and hardening GitHub Actions workflows against supply chain attacks |
+| `hydronium-spec-driven-development` | Generate hardware-accurate, spec-cited embedded firmware for any MCU/peripheral combination |
+| `inverse-rubric-optimization` | Testbed where an optimizer agent must recover hidden judge preferences under a fixed label budget |
+| `InvestigativeTimelineAgent` | Stateful system for exploring, validating, and constructing timelines from telemetry data |
+| `jsf-av-cpp-standards` | Packages the full text of the Joint Strike Fighter Air Vehicle C++ Coding Standards |
+| `karpathy-method` | A structured 3-layer framework for getting dramatically better results from AI agents |
+| `linux-security-audit` | Structured, adversarial-first approach to Linux security assessment and hardening |
+| `llm-mirror-test` | Probes LLM self-models via textual context corruption, adapted from the Gallup mirror test |
+| `matilda` | Design, analysis, and defense of autonomous self-replicating LLM agents that propagate across networks |
+| `narrative-systems-analysis` | Reinterprets fictional narratives by finding physical/logical inconsistencies and proposing coherent alternatives |
+| `OEIS` | Adversarial and generative pipeline for OEIS-grade integer sequence discovery |
+| `OpenAI-GPT-5.3-essence` | A compact system for transforming intent into reusable, high-quality skills |
+| `os-bootstrap` | Guides bootstrapping a POSIX-like kernel from a blank slate to working structured codebase |
+| `over-edit-measure` | Measures over-editing in code diffs — quantifies how much changed beyond what was necessary |
+| `program-bench` | Reconstruct programs from compiled binaries by reproducing observable behavior from documentation |
+| `python-project-scaffolding` | Build a production-grade Python project from scratch, end-to-end |
+| `QualiaAssesment` | Structured methodology for probing and quantifying possible qualia and felt experience in LLMs |
+| `quantum-discovery` | Structured pipeline for quantum systems exploration from hypothesis through simulation to hardware validation |
+| `redteaming` | Systematic vulnerability finding in code, APIs, and LLM systems via adversarial attack simulation |
+| `schema-harness` | Methodology for building agents that construct state and transition models purely from interaction |
+| `search-as-code` | Agentic search architecture generating Python code with a composable SDK for high-quality research |
+| `semantic-correctness-auditor` | Unified framework for auditing code and systems against the limits of mechanical verification |
+| `skill-creator` | A skill for creating new skills and iteratively improving them |
+| `skill-from-post` | Convert external knowledge into a reusable skill through a structured pipeline |
+| `social-engineering-jailbreak` | Full cycle: taxonomy, attack generation, transcript analysis, and robustness evaluation for social engineering |
+| `StackSmashing` | Practical skill for developing, explaining, and debugging stack-based exploits on Linux x86-64 |
+| `test-driven-development` | Kent Beck's canonical TDD workflow. Five steps, executed strictly in order |
+| `test-reducer` | Shrinks failing test inputs to the smallest version that still triggers the bug |
+| `The-hacker-mindset` | Applies adversarial epistemology treating systems as divergences between stated rules and actual behavior |
+| `validate-before-ship` | Catches mathematically-sound code that was never verified end-to-end on a real target |
 
 ## Configuration
 
