@@ -361,6 +361,22 @@ executable.
 | Boundary values | Empty input, single element, large input |
 | Type correctness | Wrong-type args raise TypeError where appropriate |
 | Property-based | Use hypothesis for complex functions |
+| Adversarial tests | ≥2 per non-adversarial test (happy path, edge case, error case, boundary, type correctness, property-based) |
+
+**Adversarial testing guidance:** An adversarial test deliberately tries to break the assumption a non-adversarial test validates. For each non-adversarial test, think "what would make this function fail in a way the happy-path test wouldn't catch" and write two such tests. Examples of adversarial angles:
+- **Corrupted input:** malformed bytes, truncated data, unexpected nulls, non-ASCII in ASCII fields, NaN/Inf in numeric fields
+- **State manipulation:** call out of order, skip initialization, double-close, operate on a closed/consumed resource, concurrent mutations
+- **Invariant fuzzing:** generate random valid-ish inputs and assert the function never crashes, never returns a logically impossible result, and never leaks internal state
+- **Resource exhaustion:** very large inputs that trigger O(n^2) behavior, deeply nested structures, many simultaneous handles
+- **Protocol violations:** wrong message types, fields present when they should be absent and vice versa, unexpected HTTP methods, mismatched content-type
+- **Type confusion:** values on the boundary of the type system (e.g., empty string vs None, 0 vs False, NaN vs a float that passes `isinstance(x, float)` but breaks ordering)
+
+**Test naming convention for adversarial tests:** `test_<function>_<scenario>_adversarial`, e.g.:
+- `test_parse_malformed_bytes_adversarial`
+- `test_compute_double_close_adversarial`
+- `test_divide_nan_input_adversarial`
+
+A non-adversarial test without at least two adversarial counterparts is incomplete. Do not skip this.
 
 **`conftest.py` pattern:**
 
@@ -1337,6 +1353,7 @@ Before declaring the project done, verify every item (Use TODOs):
 - [ ] SPEC.md exists and is complete
 - [ ] All public API in SPEC.md is implemented
 - [ ] All edge cases in SPEC.md have a test
+- [ ] Every non-adversarial test has ≥2 adversarial counterparts
 - [ ] `pytest` exits with 0 failures
 - [ ] `python -c "import <package_name>"` succeeds
 - [ ] Coverage >= 80%
