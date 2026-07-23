@@ -6,9 +6,18 @@ description: >
   user wants to generate new sequences from arithmetic constructions, test
   whether a formula is correct, falsify a conjecture about number-theoretic
   functions, check multiplicativity, profile prime-power behavior, or search
-  for OEIS collisions. Also triggers for requests like "find me a new sequence",
+  for OEIS collisions. Also covers combinatorics research (Catalan/Motzkin/
+  Narayana/Bell families, restricted permutations, lattice paths), prime
+  number and prime gap research (gap records, twin primes, Cramér heuristics),
+  PSLQ integer-relation search for constant identities, Stirling numbers
+  (first and second kind), Bernoulli numbers, factorial prime decomposition
+  (Legendre's formula), harmonic and generalized harmonic numbers, and the
+  Riemann zeta function (special values, Euler product, high-precision zero
+  work). Also triggers for requests like "find me a new sequence",
   "is this formula right", "does f(n) = phi(n) * 2^omega(n) have a closed form",
-  "test this divisor sum for multiplicativity", or "is this OEIS-worthy". The
+  "test this divisor sum for multiplicativity", "is this OEIS-worthy",
+  "find an integer relation for this constant", "characterize this prime gap
+  sequence", or "verify this Stirling/Bernoulli/harmonic identity". The
   core philosophy: treat every formula as guilty until proven robust. Prefer
   counterexamples over confirmations. Elegance is suspicious. Survival under
   adversarial attack is the only meaningful validation.
@@ -408,6 +417,487 @@ Multiplicative for any constant c. Prime-power formula: f(p^k) = c·p^{k-1}(p-1)
 
 When testing a new member of a known family, reduce the novelty check burden by
 verifying only the first 30 terms against OEIS before full pipeline.
+
+---
+
+## §13 · Combinatorics Research
+
+Same generator → falsifier → classifier loop as §1–§5, applied to counting
+sequences instead of arithmetic functions. The key difference: ground truth
+usually comes from **direct enumeration** on small n, not from a second
+symbolic formula, so brute-force enumeration is the "definition-based"
+implementation (§2.A) and the closed form is the "factorization-based" one
+(§2.B).
+
+### 13.1 · Grammar
+
+| Family | Elements |
+|---|---|
+| **Classical counting** | binomial `C(n,k)`, Catalan `C_n`, Motzkin `M_n`, Narayana `N(n,k)`, Bell `B_n`, Schröder, Delannoy |
+| **Structures** | set partitions, restricted permutations (avoiding a pattern, derangements, involutions), lattice paths (Dyck/Motzkin paths), plane trees, non-crossing partitions |
+| **Operators** | binomial transform, INVERT transform, Euler transform, boustrophedon transform |
+| **Constraints** | pattern avoidance (single/multiple 123-type patterns), bounded height/width, colored variants (k-colored Motzkin, etc.) |
+
+### 13.2 · Ground-Truth-First Workflow
+
+1. **Brute-force enumerate** the combinatorial objects for small n (n ≤ 12–15
+   depending on growth rate) — generate every object explicitly, don't just
+   trust a recursive count.
+2. Derive or guess a closed form / generating function from the counted
+   values.
+3. Cross-check the closed form against the brute-force counts on the *same*
+   range before extending further (mirrors §2's differential validation).
+4. Only then extend via the closed form or recurrence to get 100+ terms for
+   the OEIS collision check (§6).
+
+### 13.3 · Adversarial Checks Specific to Combinatorics
+
+- **Off-by-one on n=0**: does the sequence start counting at the empty
+  structure? Half of all combinatorics bugs live here.
+- **Symmetry checks**: many combinatorial arrays are symmetric or
+  palindromic by row (Narayana numbers, Eulerian numbers) — a broken
+  symmetry is a fast falsifier.
+- **Row-sum checks**: if the object is a triangle (Stirling-like, Narayana),
+  verify row sums against a known sequence (e.g. Narayana row sums = Catalan,
+  Eulerian row sums = n!).
+- **Generating function sanity**: if a GF is conjectured, expand it
+  symbolically (`sympy.series`) to as many terms as were enumerated and
+  diff against the brute-force list.
+
+### 13.4 · Known Identities (Do Not Resubmit)
+
+| Candidate | Identity |
+|---|---|
+| Row sums of Narayana triangle | Catalan numbers `C_n` |
+| Row sums of unsigned Stirling first kind | `n!` |
+| Row sums of Stirling second kind | Bell numbers `B_n` |
+| Central binomial `C(2n,n)` | A000984 |
+| `C(2n,n)/(n+1)` | Catalan A000108 |
+| Number of Dyck paths of semilength n | Catalan A000108 |
+| Number of set partitions with no singleton | related to Bell via inclusion-exclusion; check before submitting |
+
+---
+
+## §14 · Prime Numbers and Prime Gaps Research
+
+### 14.1 · Core Objects
+
+| Object | Definition | OEIS anchor |
+|---|---|---|
+| `p(n)` | n-th prime | A000040 |
+| `π(x)` | prime counting function | A000720 |
+| `g(n) = p(n+1) - p(n)` | prime gaps | A001223 |
+| Maximal gaps | records in `g(n)` | A005250 (gap value), A005669 (index) |
+| Merit `g(n) / ln(p(n))` | normalized gap size | used for record-hunting, not itself an integer sequence |
+| Twin primes | `p, p+2` both prime | A001359 / A006512 |
+| Prime constellations | k-tuples with fixed admissible pattern | check admissibility (Hardy–Littlewood) before searching |
+
+### 14.2 · Generation and Ground Truth
+
+Use `sympy.nextprime` / `sympy.prevprime` / `sympy.primerange` for ground
+truth — never hand-roll a primality sieve for validation purposes, only for
+performance-critical generation that is then cross-checked against sympy on
+an overlapping range (mirrors §2's dual-implementation rule).
+
+```python
+from sympy import primerange, isprime, nextprime
+
+def prime_gaps(limit):
+    primes = list(primerange(2, limit))
+    return [primes[i+1] - primes[i] for i in range(len(primes) - 1)]
+```
+
+### 14.3 · Falsification Specific to Prime Gaps
+
+- **Record claims are the highest-risk output.** A "new maximal gap" claim
+  must be verified by regenerating the prime list independently (e.g. via
+  Miller–Rabin at high witness count, or a second sieve implementation) —
+  do not report a gap record from a single code path.
+- **Compare against the Cramér model** (expected max gap near `x` scales as
+  `(ln x)^2`) to sanity-check whether an observed gap is plausible or a bug.
+- **Off-by-one at the boundary**: verify gap counting includes/excludes the
+  correct endpoints; check the first few known values (2,1,2,2,4,2,4,2,4,6...)
+  against A001223 before trusting a bulk computation.
+- **Twin-prime-like patterns**: verify the constellation pattern is
+  *admissible* (no residue class mod every small prime is fully blocked)
+  before searching for it — inadmissible patterns provably have finitely
+  many (usually zero) instances and will silently return empty or garbage.
+
+### 14.4 · Statistical / Heuristic Checks (Not Proof)
+
+Use these to flag "interesting" candidates for further exploration, never as
+a substitute for exact verification:
+
+- Gap distribution vs. Cramér–Granville heuristic model
+- Hardy–Littlewood constant estimates for k-tuple density
+- Bertrand's postulate as a trivial sanity floor (`p(n+1) < 2 p(n)` must
+  always hold — if a generated table violates this, the table is wrong)
+
+---
+
+## §15 · PSLQ / Integer Relation Search
+
+Used to discover (or rule out) linear integer relations among a vector of
+real constants — e.g. testing whether some combination of `ζ(3)`, `π²`,
+`ln 2`, Catalan's constant `G`, and `γ` satisfies `Σ c_i x_i = 0` for integers
+`c_i`. This is the constants-analogue of §1–§6: generate candidate constant
+vectors, run the relation search, then adversarially confirm or falsify.
+
+### 15.1 · Tooling
+
+```python
+from mpmath import mp, mpf, pslq, zeta, pi, euler, catalan, log
+
+mp.dps = 100  # decimal digits of precision; see §15.3
+
+vec = [zeta(3), pi**2, log(2), catalan, euler, mpf(1)]
+relation = pslq(vec, maxsteps=10**6)
+```
+
+`pslq` returns `None` if no relation is found within the given precision and
+bound, or a list of integer coefficients `c_i` such that `Σ c_i · vec[i] ≈ 0`
+to the working precision.
+
+### 15.2 · Candidate Constant Construction
+
+- Mix constants from different "families" (zeta values, logs of small
+  integers, Catalan-type constants, algebraic numbers, powers of π) —
+  same-family combinations mostly rediscover trivial/known identities.
+  Search first for a term like `daedalus/skills` history of resubmitted
+  relations before reporting.
+- Include a constant `1` in the vector so PSLQ can find relations with a
+  free rational/integer term, not only homogeneous ones.
+- Prefer small vectors (4–8 constants) — PSLQ's cost and false-positive risk
+  both grow with vector length.
+
+### 15.3 · Precision Is the Entire Ballgame
+
+**The single most important rule for this section:** a relation found at
+precision `P` digits is only credible if a coefficient vector with
+`max|c_i|` bits requires roughly `n · max|c_i-bits|` digits of precision to
+distinguish from a numerical coincidence (`n` = vector length). Rules of
+thumb:
+
+1. Always run PSLQ at **two different precisions** (e.g. 50 and 100 digits).
+   If the same relation (same integer vector, possibly up to sign/scale)
+   appears at both, it survives the first falsification pass.
+2. After finding a candidate relation, **substitute it back** and evaluate
+   the residual at 2–3× the discovery precision. The residual must shrink
+   roughly in proportion to the added precision (i.e., actually go to zero),
+   not merely stay "small."
+3. Reject any relation whose smallest nonzero coefficient is implausibly
+   large relative to the precision used — that is the classic PSLQ
+   false-positive signature (an artifact of insufficient precision, not a
+   real identity).
+4. Treat rediscovery of a **known** identity (e.g. Euler's reflection
+   formula, standard zeta value relations from §20) as a successful
+   validation of the pipeline, not a novel result — check §20.4 and
+   standard constant tables before claiming novelty.
+
+### 15.4 · Adversarial Falsification
+
+- Run PSLQ on a vector of algebraically **independent** constants (e.g.
+  `π`, `e`, `ln 2`, `ln 3`) as a negative control — it must return `None`
+  (or only the trivial/garbage relation at insufficient precision). If it
+  "finds" a relation here, precision is too low or the implementation is
+  buggy.
+- Randomize the order of the input vector; a real relation's coefficients
+  permute consistently, a precision artifact often doesn't reproduce.
+
+---
+
+## §16 · Stirling Numbers
+
+### 16.1 · Definitions
+
+| Type | Notation | Meaning |
+|---|---|---|
+| Unsigned first kind | `c(n,k)` or `[n,k]` | number of permutations of n elements with k cycles |
+| Signed first kind | `s(n,k)` | coefficients of `x(x-1)...(x-n+1)` (falling factorial expansion) |
+| Second kind | `S(n,k)` or `{n,k}` | number of ways to partition an n-set into k nonempty blocks |
+
+### 16.2 · Recurrences (Ground Truth A)
+
+```
+c(n,k) = c(n-1,k-1) + (n-1)·c(n-1,k)     # unsigned first kind
+s(n,k) = s(n-1,k-1) - (n-1)·s(n-1,k)      # signed first kind
+S(n,k) = S(n-1,k-1) + k·S(n-1,k)          # second kind
+```
+
+Base cases: `c(0,0)=s(0,0)=S(0,0)=1`; `c(n,0)=s(n,0)=S(n,0)=0` for `n>0`;
+`c(n,k)=s(n,k)=S(n,k)=0` for `k>n`.
+
+### 16.3 · Closed Form (Ground Truth B, Second Kind Only)
+
+```
+S(n,k) = (1/k!) · Σ_{i=0}^{k} (-1)^i · C(k,i) · (k-i)^n
+```
+
+Use this as the independent cross-check against the recurrence (§2-style
+dual implementation) — sympy exposes both via `sympy.functions.combinatorial.numbers.stirling`.
+
+### 16.4 · Known Row/Column Identities (Do Not Resubmit)
+
+| Candidate | Identity |
+|---|---|
+| Row sums of unsigned first kind | `n!` (A000142) |
+| Row sums of second kind | Bell numbers (A000110) |
+| `S(n,1)` | 1 |
+| `S(n,n)` | 1 |
+| `S(n,2)` | `2^{n-1} - 1` |
+| `S(n,n-1)` | `C(n,2)` |
+| `c(n,1)` | `(n-1)!` |
+| `Σ_k s(n,k)·x^k` at `x=1` | `0` for `n>1` (falling factorial at x=1 has a zero root unless n≤1) |
+
+### 16.5 · Falsification Checklist
+
+1. Verify recurrence and closed form (second kind) agree for n=1…20, all k.
+2. Verify row sums against factorial / Bell numbers.
+3. Check sign convention explicitly before submitting — mixing up `s(n,k)`
+   (signed) and `c(n,k)` (unsigned) is the single most common submission
+   error for this family.
+
+---
+
+## §17 · Bernoulli Numbers
+
+### 17.1 · Definition
+
+Generating function:
+
+```
+t / (e^t - 1) = Σ_{n=0}^∞ B_n · t^n / n!
+```
+
+**Sign convention warning:** this convention gives `B_1 = -1/2`. The "other"
+convention (`t/(1-e^{-t})`) gives `B_1 = +1/2`. State the convention
+explicitly in any report — this is the #1 source of disagreement when
+cross-checking against a second source.
+
+### 17.2 · Recurrence (Ground Truth A)
+
+```
+Σ_{k=0}^{n} C(n+1, k) · B_k = 0   for n ≥ 1,   B_0 = 1
+```
+
+Solve for `B_n` by isolating the `k=n` term.
+
+### 17.3 · Closed Form via Zeta (Ground Truth B)
+
+```
+B_{2n} = (-1)^{n+1} · 2 · (2n)! · ζ(2n) / (2π)^{2n}     for n ≥ 1
+```
+
+Cross-check numerator/denominator against `sympy.bernoulli(n)` (exact
+rational) — this ties directly into §20 (Riemann zeta).
+
+### 17.4 · Structural Facts (Use as Falsifiers, Not Just Trivia)
+
+- **Odd-index vanishing**: `B_n = 0` for all odd `n ≥ 3`. Any nonzero
+  "novel" odd-index Bernoulli-like sequence should be treated as a bug or a
+  different (non-Bernoulli) object.
+- **von Staudt–Clausen theorem**: the denominator of `B_{2n}` is
+  `Π_{(p-1) | 2n} p` (product over primes p such that `p-1` divides `2n`).
+  Use this to verify a computed denominator without needing the full
+  numerator.
+- **Irregular primes**: a prime `p` is irregular if it divides the numerator
+  of some `B_{2k}` for `2k ≤ p-3`. Relevant if the research touches
+  Bernoulli numerators as a sequence in their own right (A092132 numerators,
+  A002445 denominators) — check against known irregular prime tables
+  (37, 59, 67, 101, 103, ... ) before claiming a new pattern.
+
+### 17.5 · Weak Zones
+
+Test `n = 0,1,2,3,4,6,8,10,12` explicitly — `B_{12} = -691/2730` is the
+classical stress test because 691 is the first "irregular-adjacent"
+numerator prime that trips up naive implementations using floating point
+instead of exact rationals.
+
+---
+
+## §18 · Factorial Decomposition
+
+### 18.1 · Legendre's Formula (Ground Truth)
+
+The exponent of prime `p` in the factorization of `n!`:
+
+```
+e_p(n!) = Σ_{i=1}^{∞} floor(n / p^i)          (finite sum, stops when p^i > n)
+        = (n - s_p(n)) / (p - 1)               (s_p(n) = digit sum of n in base p)
+```
+
+Both forms must agree — use the digit-sum form as the independent
+cross-check (§2-style dual implementation) against the floor-sum form.
+
+```python
+def legendre_exponent(n, p):
+    e, pk = 0, p
+    while pk <= n:
+        e += n // pk
+        pk *= p
+    return e
+
+def digit_sum_base(n, p):
+    s = 0
+    while n:
+        s += n % p
+        n //= p
+    return s
+
+def legendre_via_digitsum(n, p):
+    return (n - digit_sum_base(n, p)) // (p - 1)
+```
+
+### 18.2 · Derived Sequences
+
+| Object | Definition | Notes |
+|---|---|---|
+| Trailing zeros of `n!` in base 10 | `min(e_2(n!) // 1, e_5(n!))` more precisely `e_5(n!)` since `e_2 ≥ e_5` always | A027868 |
+| Trailing zeros in base b | requires factoring `b` and taking `min` over `e_p(n!) / a_p` for each `p^{a_p} ‖ b` | generalizes A027868 |
+| `n!` squarefree part / kernel | `∏_{p: e_p(n!) odd} p` | check parity of each `e_p(n!)` |
+| Largest `k` such that `k! | n` | inverse problem; brute force upward from `k=1` |
+
+### 18.3 · Falsification Checklist
+
+1. Verify `e_2(n!) ≥ e_p(n!)` for all `p > 2` at the same `n` (2 is always
+   the most abundant prime factor of a factorial) — a violation means a bug.
+2. Cross-check trailing-zero counts against direct string manipulation
+   (`str(math.factorial(n)).rstrip('0')`) for `n` up to a few hundred before
+   trusting the Legendre-based formula for larger `n`.
+3. Weak zones: `n` = powers of `p` and `p-1` below/above a power (e.g. for
+   `p=5`: `n = 24, 25, 26, 124, 125, 126`) — these are where `floor(n/p^i)`
+   terms change discontinuously and where off-by-one bugs surface.
+
+---
+
+## §19 · Harmonic Numbers
+
+### 19.1 · Definitions
+
+```
+H_n       = Σ_{k=1}^{n} 1/k                  (ordinary harmonic number)
+H_n^{(m)} = Σ_{k=1}^{n} 1/k^m                 (generalized / order-m harmonic number)
+```
+
+`H_n^{(1)} = H_n`. As `m → ∞` the generalized harmonic numbers relate
+directly to `ζ(m)` (§20) since `H_n^{(m)} → ζ(m)` as `n → ∞` for `m > 1`.
+
+### 19.2 · Exact Arithmetic Is Mandatory
+
+Always compute with `fractions.Fraction` (or `sympy.Rational`), never
+floats — harmonic number numerators/denominators are OEIS objects in their
+own right (A001008 numerators, A002805 denominators), and float
+accumulation silently corrupts the denominator's prime structure.
+
+```python
+from fractions import Fraction
+
+def harmonic(n, m=1):
+    return sum(Fraction(1, k**m) for k in range(1, n + 1))
+```
+
+### 19.3 · Structural Falsifiers
+
+- **Wolstenholme's theorem**: for prime `p ≥ 5`, the numerator of `H_{p-1}`
+  is divisible by `p²`, and the numerator of the second-order sum
+  `Σ_{k=1}^{p-1} 1/k²` is divisible by `p`. Use this as a targeted
+  correctness check at `p = 5, 7, 11, 13, ...` — a computed numerator that
+  fails this divisibility signals a bug, not a mathematical exception.
+- **Denominator growth**: `denominator(H_n) | lcm(1, 2, ..., n)`, with
+  equality failing only at specific `n` — verify this containment rather
+  than assuming exact equality.
+- **Digamma connection**: `H_n = γ + ψ(n+1)` where `ψ` is the digamma
+  function — useful as a high-precision numeric cross-check via
+  `mpmath.digamma` independent of the exact-fraction computation.
+
+### 19.4 · Known Identities (Do Not Resubmit)
+
+| Candidate | Identity |
+|---|---|
+| `Σ_{k=1}^{n} H_k` | `(n+1)·H_n - n` (well-known summation identity) |
+| `Σ_{k=1}^{n} H_k / k` | `(H_n² + H_n^{(2)}) / 2` |
+| `H_n - ln(n)` | → `γ` (Euler–Mascheroni constant) as `n → ∞`; not itself a new sequence |
+
+---
+
+## §20 · Riemann Zeta Function
+
+### 20.1 · Scope and Caution
+
+This section covers **numerical and special-value** work with `ζ(s)` —
+computing special values, verifying identities, and locating zeros to high
+precision. It does **not** cover, and this skill should not be used to
+claim, progress on the Riemann Hypothesis itself. Zero-location work is
+purely numerical verification (checking known zeros / hunting for
+counterexamples to RH within a numerically verified range), never a
+symbolic proof attempt.
+
+### 20.2 · Special Values (Ground Truth via Known Closed Forms)
+
+```
+ζ(2)  = π²/6
+ζ(4)  = π⁴/90
+ζ(2k) = (-1)^{k+1} · B_{2k} · (2π)^{2k} / (2 · (2k)!)     (ties to §17.3)
+ζ(-1) = -1/12
+ζ(-2k) = 0   for k ≥ 1  (trivial zeros)
+ζ(0)  = -1/2
+```
+
+Cross-check any computed `ζ(2k)` against the Bernoulli-number closed form
+(§17.3) — this is the primary dual-implementation check for even integer
+arguments.
+
+### 20.3 · Numerical Tooling
+
+```python
+from mpmath import mp, zeta, mpc
+
+mp.dps = 50  # working precision; raise for zero-hunting (§20.5)
+
+# Euler product sanity check (finite truncation) for Re(s) > 1
+def euler_product_approx(s, num_primes=2000):
+    from sympy import primerange
+    from mpmath import mpf
+    result = mpf(1)
+    for p in primerange(2, num_primes):
+        result *= 1 / (1 - mpf(p) ** (-s))
+    return result
+```
+
+The Euler product only converges for `Re(s) > 1`; use it strictly as a
+sanity check against `mpmath.zeta(s)` there, never as a definition for
+`Re(s) ≤ 1` (that requires analytic continuation, which `mpmath.zeta`
+already handles correctly).
+
+### 20.4 · Known Relations (Do Not Resubmit)
+
+| Candidate | Identity |
+|---|---|
+| `ζ(2)` | `π²/6` (Basel problem) |
+| `ζ(2k)/π^{2k}` rational for all `k≥1` | consequence of §17.3; the rational values themselves (A046988/A002432-type numerator/denominator pairs) are already in OEIS |
+| `ζ(s)·(1-2^{1-s})` | Dirichlet eta function `η(s)`; standard, not novel |
+| Trivial zeros | negative even integers |
+| Functional equation | `ζ(s) = 2^s π^{s-1} sin(πs/2) Γ(1-s) ζ(1-s)` |
+
+### 20.5 · Falsification / Verification for Zero Work
+
+1. **Always verify against a published table** of the first N nontrivial
+   zeros' imaginary parts (widely available to high precision) before
+   reporting a "new" zero location — the first few are approximately
+   14.134725, 21.022040, 25.010858...; a computed value that doesn't match
+   these to the working precision indicates an implementation bug, not a
+   discovery.
+2. Zero-finding must report the **precision used** and the **verification
+   method** (e.g. sign change of `Z(t)` the Riemann–Siegel function, or
+   root isolation via `mpmath.findroot` seeded near a known approximate
+   location) — a zero claimed without a stated precision is not
+   verifiable and should be discarded per §7's scoring philosophy.
+3. Treat any claimed zero off the critical line `Re(s) = 1/2` within
+   verified numerical range as **overwhelmingly likely to be a bug**
+   (RH has been numerically verified for a very large number of zeros) —
+   apply the same "guilty until proven robust" prior from the skill's
+   core philosophy, and re-derive with an independent high-precision
+   implementation before reporting anything.
 
 ---
 
