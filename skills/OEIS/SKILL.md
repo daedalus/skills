@@ -13,11 +13,14 @@ description: >
   (first and second kind), Bernoulli numbers, factorial prime decomposition
   (Legendre's formula), harmonic and generalized harmonic numbers, and the
   Riemann zeta function (special values, Euler product, high-precision zero
-  work). Also triggers for requests like "find me a new sequence",
+  work), and integer partitions (partition function p(n), restricted and
+  colored partitions, Ramanujan congruences, conjugate partitions, rank and
+  crank statistics). Also triggers for requests like "find me a new sequence",
   "is this formula right", "does f(n) = phi(n) * 2^omega(n) have a closed form",
   "test this divisor sum for multiplicativity", "is this OEIS-worthy",
   "find an integer relation for this constant", "characterize this prime gap
-  sequence", or "verify this Stirling/Bernoulli/harmonic identity". The
+  sequence", "verify this Stirling/Bernoulli/harmonic identity", or "check
+  this partition congruence". The
   core philosophy: treat every formula as guilty until proven robust. Prefer
   counterexamples over confirmations. Elegance is suspicious. Survival under
   adversarial attack is the only meaningful validation.
@@ -523,7 +526,23 @@ def prime_gaps(limit):
   before searching for it — inadmissible patterns provably have finitely
   many (usually zero) instances and will silently return empty or garbage.
 
-### 14.4 · Statistical / Heuristic Checks (Not Proof)
+### 14.4 · Verified Reference Records (Dogfood-Confirmed)
+
+Independently regenerated via `sympy.primerange` up to 300,000 and cross-checked
+against the pipeline's own gap-tracking logic; use this as a fast local sanity
+table before trusting a bulk maximal-gap computation elsewhere in this range:
+
+```
+(p, gap, merit=gap/ln(p)):
+(2,1,1.443)  (3,2,1.821)   (7,4,2.056)   (23,6,1.914)   (89,8,1.782)
+(113,14,2.962) (523,18,2.876) (887,20,2.946) (1129,22,3.130) (1327,34,4.728)
+(9551,36,3.928) (15683,44,4.555) (19609,52,5.261) (31397,72,6.954) (155921,86,7.192)
+```
+
+All 15 match A005250/A005669's published prefix. If a new run disagrees with
+this table anywhere in `p ≤ 155921`, the bug is in the new run, not here.
+
+### 14.5 · Statistical / Heuristic Checks (Not Proof)
 
 Use these to flag "interesting" candidates for further exploration, never as
 a substitute for exact verification:
@@ -673,6 +692,15 @@ t / (e^t - 1) = Σ_{n=0}^∞ B_n · t^n / n!
 convention (`t/(1-e^{-t})`) gives `B_1 = +1/2`. State the convention
 explicitly in any report — this is the #1 source of disagreement when
 cross-checking against a second source.
+
+**Dogfood-confirmed:** implementing the §17.2 recurrence directly and diffing
+against `sympy.bernoulli(n)` for n=0..20 produces exactly **one** disagreement
+— at n=1 (`-1/2` from the recurrence vs sympy's `+1/2`) — with n=0 and all
+n=2..20 agreeing exactly (including B₁₂). This is the textbook signature of a
+sign-convention mismatch rather than an implementation bug: a real bug would
+also perturb the even-indexed terms or fail von Staudt–Clausen (§17.4), which
+it does not. Treat a lone n=1 disagreement as "check your convention," not
+"something is broken."
 
 ### 17.2 · Recurrence (Ground Truth A)
 
@@ -898,6 +926,189 @@ already handles correctly).
    apply the same "guilty until proven robust" prior from the skill's
    core philosophy, and re-derive with an independent high-precision
    implementation before reporting anything.
+
+---
+
+## §21 · Integer Partitions
+
+### 21.1 · Core Objects
+
+| Object | Definition | OEIS anchor |
+|---|---|---|
+| `p(n)` | number of partitions of n (order doesn't matter) | A000041 |
+| `p(n,k)` | partitions of n into exactly k parts | A008284 |
+| `q(n)` | partitions into distinct parts | A000009 |
+| Partitions into odd parts | equals `q(n)` (Euler's theorem, §21.5) | A000009 |
+| Conjugate partition | transpose of the Young diagram; swaps "largest part" with "number of parts" | — |
+| Rank | `largest part − number of parts` (Dyson's rank) | used for congruence explanations |
+| Crank | Andrews–Garvan statistic explaining all three Ramanujan congruences | — |
+
+### 21.2 · Generating Function (Conceptual Ground Truth)
+
+```
+Σ p(n) x^n = ∏_{k=1}^∞ 1/(1 - x^k)
+```
+
+Restricted variants swap the product range/step: distinct parts →
+`∏(1+x^k)`; odd parts only → `∏_{k odd} 1/(1-x^k)`; parts ≤ m →
+truncate the product at `k=m`.
+
+### 21.3 · Two Independent Implementations (§2-Style Dual Check)
+
+**A. Pentagonal number recurrence** (fast, exact, no partition objects
+generated — analogous to the "factorization-based" implementation in §2.B):
+
+```python
+def pentagonal_recurrence(N):
+    p = [0]*(N+1)
+    p[0] = 1
+    for n in range(1, N+1):
+        total, k = 0, 1
+        while True:
+            g1 = k*(3*k-1)//2
+            g2 = k*(3*k+1)//2
+            if g1 > n and g2 > n:
+                break
+            sign = 1 if k % 2 == 1 else -1
+            if g1 <= n: total += sign * p[n-g1]
+            if g2 <= n: total += sign * p[n-g2]
+            k += 1
+        p[n] = total
+    return p
+```
+
+Uses Euler's pentagonal number theorem:
+`p(n) = Σ_{k≠0} (-1)^{k+1} p(n - k(3k-1)/2)`, generalized pentagonal
+numbers `k(3k-1)/2` for `k = 1,-1,2,-2,3,-3,...`.
+
+**B. Direct enumeration / DP over parts** (definition-based, §2.A analogue)
+— restricted-partition DP, e.g. for distinct-parts or bounded-part variants:
+
+```python
+def count_partitions_odd_parts(n):
+    dp = [0]*(n+1); dp[0] = 1
+    for o in range(1, n+1, 2):
+        for s in range(o, n+1):
+            dp[s] += dp[s-o]
+    return dp[n]
+```
+
+Cross-check A against `sympy.functions.combinatorial.numbers.partition`
+(the modern location; `sympy.npartitions` is deprecated) before trusting a
+hand-rolled recurrence at scale.
+
+### 21.4 · Falsification Specific to Partitions
+
+- **p(0) = 1, not 0** — the empty partition is a valid partition of 0; this
+  is the single most common off-by-one in partition code (mirrors the
+  n=0 edge case rule of §4.4).
+- **Weak zones**: pentagonal numbers themselves (`1, 2, 5, 7, 12, 15, 22,
+  26, ...`) and their neighbors — recurrence implementations most often
+  break exactly at these indices since that's where the sign/term pattern
+  changes.
+- **Growth sanity**: `p(n)` grows like `exp(π√(2n/3)) / (4n√3)` (Hardy–
+  Ramanujan asymptotic) — a computed value wildly off this envelope at
+  moderate n (≥50) signals a bug rather than a genuinely different
+  sequence.
+- **Congruence checks as fast correctness probes** (§21.5) — cheaper than
+  re-deriving p(n) independently, and catch a large class of off-by-one and
+  indexing bugs immediately.
+
+### 21.5 · Known Identities and Congruences (Do Not Resubmit)
+
+| Candidate | Identity |
+|---|---|
+| Partitions into distinct parts | equals partitions into odd parts (Euler, A000009) |
+| Self-conjugate partitions | equal partitions into distinct odd parts |
+| `p(n,k)` summed over k | `p(n)` |
+| `p(n,1)` | 1 |
+| `p(n,2)` | `floor(n/2)` |
+| `p(n,n)` | 1 (all parts = 1) |
+| `p(n,n-1)` | 1 |
+| Ramanujan's congruences | `p(5n+4) ≡ 0 (mod 5)`; `p(7n+5) ≡ 0 (mod 7)`; `p(11n+6) ≡ 0 (mod 11)` |
+
+Ramanujan's three congruences are explained uniformly by the crank
+statistic (Andrews–Garvan): the crank mod 5/7/11 partitions the residue
+classes evenly. If a "new" congruence is conjectured for a modulus outside
+{5,7,11} (or a prime power thereof, per later work by Ono and others),
+treat it with extra suspicion — check the literature before claiming
+novelty, since sporadic-looking partition congruences are a well-mined area.
+
+### 21.6 · Dogfood-Confirmed (Run 2)
+
+Verified directly: the pentagonal-number recurrence (§21.3.A) matches
+`sympy`'s partition function exactly for n=0..60 (0 mismatches); all three
+Ramanujan congruences hold on every tested residue in range (5n+4 up to
+n=11, 7n+5 up to n=7, 11n+6 up to n=30); and Euler's distinct-parts/
+odd-parts equality holds exactly for n=1..20 via two independent DP
+implementations. See §22.3 for the consolidated log entry.
+
+---
+
+## §22 · Dogfood Validation Log
+
+This section is updated whenever §13–§20 are actually exercised end-to-end
+against real computation (not just read) — same spirit as §10's meta-insight
+tracking, but for the newer research domains rather than arithmetic-function
+sequence generation.
+
+### 22.1 · Run 1 (initial validation of §13–§20)
+
+Full pipeline exercised with real code (sympy + mpmath) across all eight new
+sections in one pass. Every check either confirmed a known identity/theorem
+or correctly rejected a negative control — this run's purpose was validating
+the *methodology itself*, not discovering novel sequences.
+
+| Section | Check | Result |
+|---|---|---|
+| §13 Combinatorics | Brute-force 132-avoiding permutations (n=1..8) vs Catalan | Exact match |
+| §14 Prime gaps | First 10 gaps vs A001223; Bertrand's postulate to 300,000; 15 maximal-gap records vs A005250/A005669 | All match (see §14.4) |
+| §15 PSLQ | `[ζ(2), π², 1]` at 50 and 100 digits | Stable relation `[-6,1,0]` at both precisions (⇒ 6ζ(2)=π²) |
+| §15 PSLQ | Negative control `[π, e^γ-family, ln2, 1]` | Correctly returned no relation |
+| §16 Stirling | Recurrence vs closed form, n,k ≤ 15; row sums vs Bell numbers | 0 mismatches; row sums match exactly |
+| §17 Bernoulli | Recurrence vs `sympy.bernoulli`, n=0..20; von Staudt–Clausen denominators n=1..6 | 1 expected sign-convention mismatch at n=1 (see §17.4); all else exact |
+| §18 Factorial decomposition | Legendre vs digit-sum, 45 (n,p) pairs incl. weak zones; trailing zeros n<300 vs string method | 0 mismatches |
+| §19 Harmonic numbers | Wolstenholme's theorem, p=5,7,11,13,17,19,23 | Holds for every tested prime |
+| §20 Zeta | ζ(2)=π²/6; ζ(2k) via Bernoulli formula k=1..4; truncated Euler product (3000 primes) vs ζ(2),ζ(3); first 3 nontrivial zeros vs known table | All match; zeros confirmed on Re(s)=1/2 |
+
+**Takeaway:** no section required a methodology fix. The only flagged item
+(Bernoulli n=1) was correctly diagnosable as a documented convention
+difference rather than a bug, which is itself a validation of §17.4's
+warning — the pitfall is real and reproduces on the first attempt, not a
+hypothetical.
+
+### 22.2 · Open Follow-Ups (Not Yet Run, as of Run 1)
+
+Recorded here rather than run immediately, to keep this log honest about
+what has and hasn't actually been dogfooded:
+
+- §13: no novel combinatorial construction has been generated yet — Run 1
+  only validated the *ground-truth-first workflow* against a known result.
+  A real generative pass (new pattern-avoidance classes, colored Motzkin
+  variants) is still open.
+- §14: constellation admissibility checking (§14.3) not yet exercised on an
+  actual k-tuple search, only gap-record verification.
+- §15: only one relation family (ζ(2)/π²) has been tested; broader vectors
+  mixing Catalan's constant, γ, and higher ζ values are unexplored.
+- §20: no independent zero *search* beyond the first 3 known zeros has been
+  attempted — Run 1 only confirms the verification tooling works, not that
+  it's been pointed at unverified territory.
+
+### 22.3 · Run 2 (validation of §21 Integer Partitions)
+
+| Check | Result |
+|---|---|
+| Pentagonal recurrence vs `sympy` partition function, n=0..60 | 0 mismatches |
+| `p(5n+4) ≡ 0 (mod 5)`, n=0..11 | Holds for every tested n |
+| `p(7n+5) ≡ 0 (mod 7)`, n=0..7 | Holds for every tested n |
+| `p(11n+6) ≡ 0 (mod 11)`, n=0..30 | Holds for every tested n |
+| Euler distinct-parts = odd-parts, n=1..20 (two independent DP implementations) | Exact match at every n |
+
+**Takeaway:** same pattern as Run 1 — the pentagonal recurrence and all
+three Ramanujan congruences confirmed on first attempt with no
+implementation fixes needed. No novel partition-related sequence was
+generated in this run; still open for a future pass (e.g. a genuinely new
+restricted-partition variant, per §21's grammar).
 
 ---
 
