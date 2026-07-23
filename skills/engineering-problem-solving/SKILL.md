@@ -168,8 +168,8 @@ Bug report: "flaky test, fails ~1 in 20 CI runs."
 - [ ] Minimal repro / minimal case built
 - [ ] ≥2 competing hypotheses considered, with a discriminating test chosen
 - [ ] Root cause distinguished from symptom
-- [ ] Independent verification performed (test, brute-force check, second
-      derivation) — not just review of the same reasoning that produced it
+- [ ] Independent verification actually executed with available tools (not
+      narrated/predicted) — test run, brute-force check, second derivation
 - [ ] Rejected alternatives recorded with the reason each was ruled out
 - [ ] Stopping point was a deliberate call (verified + others falsified), not
       just running out of time or interest
