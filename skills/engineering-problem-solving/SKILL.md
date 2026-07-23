@@ -77,12 +77,17 @@ counterexample — not by plausibility.
 - Re-derive or re-run independently of the path that produced the candidate
   answer. A proof that only "looks right" on re-reading is not verified — a
   proof that survives an independent derivation or an adversarial test is.
+- **If you have tool access (shell, code execution, a REPL), execute the
+  verification — don't narrate a hypothetical run.** "This test would fail
+  on the old code and pass on the new code" is a prediction, not a result.
+  Run it, paste the actual output, then draw the conclusion.
 - For code: write the test that would have caught the bug, then confirm it
   fails on the old code and passes on the new code. A fix without a failing-
   then-passing test is a hypothesis, not a fix.
 - For sequences/identities/combinatorics: check against known references
   (OEIS, literature) and against independently-written brute-force code for
-  small cases, not just against the closed-form derivation.
+  small cases, not just against the closed-form derivation. Run the
+  brute-force script; don't reason about what it would output.
 - Actively look for the counterexample that would break the current answer.
   If you can't find one after real effort, that's evidence, not proof.
 
@@ -116,6 +121,10 @@ counterexample — not by plausibility.
   observation contradicted it → why it was rejected**. This is more valuable
   than a narrative of the successful path alone, because it's what makes the
   final answer defensible.
+- For multi-round investigations (iterative code review, multi-session
+  research), persist this log somewhere durable — a file, a commit message,
+  a comment block — rather than letting it live only in the conversation.
+  A log that vanishes when the session ends has to be re-derived next time.
 
 ## 8. Report honestly
 
@@ -128,6 +137,30 @@ counterexample — not by plausibility.
 - No inflation: don't describe an incremental fix as a breakthrough, and
   don't hedge away a genuinely solid result either. Match the language to
   the evidence.
+
+## Micro-example
+
+Bug report: "flaky test, fails ~1 in 20 CI runs."
+
+1. Frame: expected = deterministic pass; observed = intermittent failure →
+   class = race condition, not logic bug.
+2. Minimize: loop the test 100x locally with `-race` / thread sanitizer
+   enabled instead of waiting on CI.
+3. Hypotheses: (a) shared mutable state between test cases, (b) unawaited
+   async cleanup, (c) timing-dependent assertion. Discriminating test: run
+   tests in isolation vs. in the full suite — if isolation never fails, it's
+   (a) or ordering, not (c).
+4. Eliminate: isolation run never fails → rules out (c). Instrument the
+   suspected shared fixture → observe write from a previous test still
+   in flight.
+5. Verify: add an explicit teardown barrier, run the stress loop (100x) —
+   actually execute it, 0/100 failures vs. 6/100 before.
+6. Stop: verified fix, (b) and (c) actively ruled out by the isolation test
+   — not just deprioritized. Done.
+7. Log: "(c) rejected — isolation run never reproduced it, ruling out pure
+   timing" saved in the PR description for the next person who hits this.
+8. Report: "Fixed — root cause was missing teardown barrier, confirmed via
+   100x stress run, 0 failures. Not a mitigation."
 
 ## Quick checklist (apply per problem, not just once at the end)
 
