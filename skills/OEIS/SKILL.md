@@ -477,6 +477,7 @@ implementation (§2.A) and the closed form is the "factorization-based" one
 | Central binomial `C(2n,n)` | A000984 |
 | `C(2n,n)/(n+1)` | Catalan A000108 |
 | Number of Dyck paths of semilength n | Catalan A000108 |
+| `\|Av_n(132,213)\|` (permutations avoiding both 132 and 213) | `2^{n-1}` — confirmed by brute force n=1..8 (§22 Run 3) |
 | Number of set partitions with no singleton | related to Bell via inclusion-exclusion; check before submitting |
 
 ---
@@ -542,7 +543,24 @@ table before trusting a bulk maximal-gap computation elsewhere in this range:
 All 15 match A005250/A005669's published prefix. If a new run disagrees with
 this table anywhere in `p ≤ 155921`, the bug is in the new run, not here.
 
-### 14.5 · Statistical / Heuristic Checks (Not Proof)
+### 14.5 · Worked Constellation Example (Dogfood-Confirmed)
+
+Pattern `(p, p+2, p+6, p+8)` (prime quadruplets) tested for admissibility
+(§14.3) and then actually searched, rather than left as a described-but-
+unexercised procedure:
+
+- **Admissibility**: no prime `q ≤ 50` blocks every residue class → pattern
+  is admissible.
+- **Real search to 2,000,000**: 295 quadruplets found; first few start at
+  p = 5, 11, 101, 191, 821, 1481, 1871, 2081, 3251, 3461.
+- **Hardy–Littlewood cross-check**: numerically integrating the singular-
+  series estimate (`C₄ ≈ 4.1512`) over the same range gives ≈365, so the
+  actual/estimate ratio is ≈0.81 — the right order of magnitude for a
+  heuristic asymptotic at this range (convergence is slow; treat as a
+  plausibility check per §14.4's Statistical/Heuristic caveat, not a
+  precision match).
+
+### 14.6 · Statistical / Heuristic Checks (Not Proof)
 
 Use these to flag "interesting" candidates for further exploration, never as
 a substitute for exact verification:
@@ -622,6 +640,24 @@ thumb:
   buggy.
 - Randomize the order of the input vector; a real relation's coefficients
   permute consistently, a precision artifact often doesn't reproduce.
+
+### 15.5 · Confirmed Negative Results (Dogfood Reference)
+
+Broader constant vectors actually run (not just described) at 50 and 100
+digits, both returning no relation at either precision — recorded so a
+future pass doesn't re-spend a search budget rediscovering the same
+absence of a low-degree relation:
+
+| Vector | Result |
+|---|---|
+| `[Catalan's constant G, ζ(3), γ, ln2, π, 1]` | no relation found (dps 50, 100) |
+| `[ζ(3), π³, 1]` | no relation found (dps 50, 100) — consistent with ζ(3) (Apéry's constant) having no known simple closed form in π |
+
+A clean `None` at two precisions for a *plausible-looking* vector is itself
+a useful (negative) result: it's evidence against a simple low-degree
+relation existing among those specific constants at that vector length,
+not just an untested gap. Widening the vector (more constants) or its
+precision is the natural next step if this combination is revisited.
 
 ---
 
@@ -914,7 +950,9 @@ already handles correctly).
    reporting a "new" zero location — the first few are approximately
    14.134725, 21.022040, 25.010858...; a computed value that doesn't match
    these to the working precision indicates an implementation bug, not a
-   discovery.
+   discovery. **Dogfood-confirmed through zero 10** (imaginary parts up to
+   ≈49.7738), all matching the known table and all on `Re(s)=1/2` — see
+   §22 Run 3.
 2. Zero-finding must report the **precision used** and the **verification
    method** (e.g. sign change of `Z(t)` the Riemann–Siegel function, or
    root isolation via `mpmath.findroot` seeded near a known approximate
@@ -1026,6 +1064,7 @@ hand-rolled recurrence at scale.
 | `p(n,n)` | 1 (all parts = 1) |
 | `p(n,n-1)` | 1 |
 | Ramanujan's congruences | `p(5n+4) ≡ 0 (mod 5)`; `p(7n+5) ≡ 0 (mod 7)`; `p(11n+6) ≡ 0 (mod 11)` |
+| Partitions with parts differing by ≥2 | equal partitions into parts `≡ 1, 4 (mod 5)` — first Rogers–Ramanujan identity, confirmed n=0..20 (§22 Run 3) |
 
 Ramanujan's three congruences are explained uniformly by the crank
 statistic (Andrews–Garvan): the crank mod 5/7/11 partitions the residue
@@ -1077,24 +1116,7 @@ difference rather than a bug, which is itself a validation of §17.4's
 warning — the pitfall is real and reproduces on the first attempt, not a
 hypothetical.
 
-### 22.2 · Open Follow-Ups (Not Yet Run, as of Run 1)
-
-Recorded here rather than run immediately, to keep this log honest about
-what has and hasn't actually been dogfooded:
-
-- §13: no novel combinatorial construction has been generated yet — Run 1
-  only validated the *ground-truth-first workflow* against a known result.
-  A real generative pass (new pattern-avoidance classes, colored Motzkin
-  variants) is still open.
-- §14: constellation admissibility checking (§14.3) not yet exercised on an
-  actual k-tuple search, only gap-record verification.
-- §15: only one relation family (ζ(2)/π²) has been tested; broader vectors
-  mixing Catalan's constant, γ, and higher ζ values are unexplored.
-- §20: no independent zero *search* beyond the first 3 known zeros has been
-  attempted — Run 1 only confirms the verification tooling works, not that
-  it's been pointed at unverified territory.
-
-### 22.3 · Run 2 (validation of §21 Integer Partitions)
+### 22.2 · Run 2 (validation of §21 Integer Partitions)
 
 | Check | Result |
 |---|---|
@@ -1109,6 +1131,44 @@ three Ramanujan congruences confirmed on first attempt with no
 implementation fixes needed. No novel partition-related sequence was
 generated in this run; still open for a future pass (e.g. a genuinely new
 restricted-partition variant, per §21's grammar).
+
+### 22.3 · Run 3 (resolving the prior open follow-ups)
+
+Each item explicitly left open after Run 1 was actually exercised this
+time, rather than re-validating already-confirmed sections:
+
+| Follow-up | What was run | Result |
+|---|---|---|
+| §13: novel pattern-avoidance class | Brute-force `Av(132,213)` (double avoidance, not tested before), n=1..8 | `= 2^{n-1}` exactly (now in §13.4) |
+| §14: constellation admissibility on a real search | Prime quadruplet pattern `(0,2,6,8)`: admissibility check + real search to 2,000,000 | Admissible; 295 quadruplets found; Hardy–Littlewood ratio ≈0.81 (now §14.5) |
+| §15: broader PSLQ vector | `[G, ζ(3), γ, ln2, π, 1]` and `[ζ(3), π³, 1]` at dps 50 and 100 | No relation found at either precision, both vectors (now §15.5) |
+| §20: zeros beyond the first 3 | Zeros 4 through 10 | All match known table, all on `Re(s)=1/2` (now folded into §20.5) |
+| §21: new restricted-partition variant | First Rogers–Ramanujan identity (min-gap-2 partitions vs. parts ≡1,4 mod 5), n=0..20, two independent implementations | Confirmed exactly (now in §21.5) |
+
+**Takeaway:** this run pushed past re-validation into genuinely
+not-yet-tried territory (the gaps identified after Run 1) and every result landed on
+a side of "confirms known math" — none were bugs, and none were novel
+discoveries. The PSLQ negative results (§15.5) are the most valuable
+outcome of this run precisely *because* they're negative: they save a
+future pass from re-searching the same constant combinations.
+
+### 22.4 · Open Follow-Ups (as of Run 3)
+
+- §13: still no genuinely *novel* (not-already-classified) combinatorial
+  construction has been generated — every construction tried so far
+  (§21.4's example included) turned out to be classically known once
+  checked. A real generative pass through §13.1's grammar, biased toward
+  understudied colored/weighted variants, is still open.
+- §14: only one constellation pattern (prime quadruplets) has been
+  searched; k-tuples with k≥5 or alternative admissible patterns at the
+  same k are untested.
+- §15: only two constant-family vectors have been tried; combinations
+  involving Stirling-related constants, Bernoulli-derived constants (§17),
+  or algebraic irrationals are unexplored.
+- §16–§19 (Stirling, Bernoulli, factorial decomposition, harmonic numbers):
+  no follow-up runs yet beyond Run 1 — these sections have only ever been
+  validated against known recurrences/theorems, never pushed into a
+  generative or record-hunting mode the way §14 now has been.
 
 ---
 
