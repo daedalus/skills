@@ -1,372 +1,345 @@
-# Orthogonal Run: Cross-Skill Analysis
+# Orthogonal Run: Skills Cross-Analysis
 
 **Date**: 2026-07-23
-**Scope**: 58 unique skills across 60 SKILL.md files
-**Method**: Domain categorization → pairwise overlap/conflict/dependency analysis → trigger collision audit → gap analysis
+**Method**: Subagent-executed — 8 parallel subagents each read 5–10 skills fully, then applied meta-skills (failure-modes, engineering-problem-solving, semantic-correctness-auditor) and performed within-cluster pairwise analysis against all 58 skills.
 
 ---
 
-## 1. Inventory
+## 1. Inventory & Structural Issues
 
-### 1.1 Skills by name (58 unique)
+### 1.1 Skills by cluster (58 unique)
 
-| # | Name | Directory | Lines | Domain |
-|---|------|-----------|-------|--------|
-| 1 | adhd-reasoning-mode | adhd/ | ~30 | Thinking methods |
-| 2 | advanced-math | advanced-math/ | 331 | Research |
-| 3 | agent-eval-no-ground-truth | agent-eval-no-ground-truth/ | 180 | AI eval |
-| 4 | agentic-pbt | Agentic-Property-Based-Testing/ | ~100 | Code quality |
-| 5 | agents-md | agents-md-improve/ | 91 | Meta |
-| 6 | ai-code-detection | ai-code-detector/ | 195 | AI tools |
-| 7 | ai-code-review | ai-code-review/ | 280 | Code quality |
-| 8 | ai-vuln-harness | ai-vuln-harness/ | 90 | Security |
-| 9 | alphaevolve | alpha-evolve/ | 663 | AI research |
-| 10 | alphaproof-nexus | alphaproof-nexus/ | ~100 | AI research |
-| 11 | approach-extractor | approach-extractor/ | 84 | Meta |
-| 12 | auto-research-engineer | auto-research-engineer/ | 87 | AI eval |
-| 13 | canon-tdd | test-driven-development/ | 134 | Code quality |
-| 14 | caveman-speak | caveman/ | 146 | Utility |
-| 15 | claude-essence | Claude-Sonet-4.6-essense/ | 141 | Reference |
-| 16 | codex-security-adapter | codex-security-adapter/ | ~30 | Security |
-| 17 | coding-agent-robustness | coding-agent-robustness/ | 306 | AI eval |
-| 18 | context-eval | context-eval/ | 161 | AI eval |
-| 19 | copy-fail-lpe-mitigation | copy-fail-reponse/ | 289 | Security |
-| 20 | dogfood | dogfood/ | 162 | QA |
-| 21 | dogfooding | dogfooding/ | 271 | AI eval |
-| 22 | engineering-problem-solving | engineering-problem-solving/ | 176 | Thinking methods |
-| 23 | failure-modes | failure-modes/ | ~100 | Thinking methods |
-| 24 | fgts-naming-convention | fgts-naming-convention/ | 116 | Code quality |
-| 25 | flinch-probe | flinch-probe/ | ~200 | AI eval |
-| 26 | git-author-rewrite | git-author-rewrite/ | 85 | Utility |
-| 27 | github-actions-security | github-actions-security-checklist/ | 306 | Security |
-| 28 | hacker-mindset | The-hacker-mindset/ | ~100 | Thinking methods |
-| 29 | hydronium-spec-driven-development | hydronium-spec-driven-development/ | 638 | Low-level |
-| 30 | integer-sequence-research | OEIS/ | 1271 | Research |
-| 31 | inverse-rubric-optimization | inverse-rubric-optimization/ | 544 | AI eval |
-| 32 | InvestigativeTimelineAgent | InvestigativeTimelineAgent/ | 576 | Security |
-| 33 | jsf-av-cpp-standards | jsf-av-cpp-standards/ | 69 | Low-level |
-| 34 | karpathy-method | karpathy-method/ | 321 | Workflow |
-| 35 | linux-security-audit | linux-security-audit/ | 768 | Security |
-| 36 | llm-mirror-test | llm-mirror-test/ | 596 | AI eval |
-| 37 | llm-qualia-assessment | QualiaAssesment/ | 514 | AI eval |
-| 38 | matilda | matilda/ | 1975 | Security |
-| 39 | meta-skill-creator | OpenAI-GPT-5.3-essence/ | 86 | Meta |
-| 40 | narrative-systems-analysis | narrative-systems-analysis/ | 166 | Utility |
-| 41 | os-bootstrap | os-bootstrap/ | 304 | Low-level |
-| 42 | over-edit-measure | over-edit-measure/ | 145 | Code quality |
-| 43 | page-cache-lpe-mitigation | dirty-frag/ AND copy-fail-dirty-frag-response/ | 489 each | Security |
-| 44 | program-bench | program-bench/ | 411 | Low-level |
-| 45 | python-perf-optimization | python-perf-optimization/ | 343 | Code quality |
-| 46 | python-project-scaffold | python-project-scaffolding/ | 1541 | Code quality |
-| 47 | quantum-discovery | quantum-discovery/ | 328 | AI research |
-| 48 | redteaming-code | redteaming/ | 603 | Security |
-| 49 | schema-harness | schema-harness/ | 110 | AI research |
-| 50 | search-as-code | search-as-code/ | 463 | Research |
-| 51 | semantic-correctness-auditor | semantic-correctness-auditor/ | 271 | Code quality |
-| 52 | skill-creator | skill-creator/ | 470 | Meta |
-| 53 | skill-from-post | skill-from-post/ | 301 | Meta |
-| 54 | social-engineering-jailbreak | social-engineering-jailbreak/ | ~200 | Security |
-| 55 | stack-smashing | StackSmashing/ | 427 | Low-level |
-| 56 | test-case-reducer | test-reducer/ | 417 | Code quality |
-| 57 | validate-before-ship | validate-before-ship/ | 93 | Code quality |
-| 58 | InvestigativeTimelineAgent | InvestigativeTimelineAgent/ | 576 | Security |
+| Cluster | Skills (count) |
+|---------|----------------|
+| **Offensive Security** | ai-vuln-harness, redteaming-code, hacker-mindset, social-engineering-jailbreak, matilda, stack-smashing, codex-security-adapter (7) |
+| **Defensive Security** | linux-security-audit, github-actions-security, page-cache-lpe-mitigation (×2), copy-fail-lpe-mitigation, InvestigativeTimelineAgent, jsf-av-cpp-standards, hydronium-spec-driven-development (8) |
+| **AI Evaluation** | agent-eval-no-ground-truth, coding-agent-robustness, context-eval, flinch-probe, inverse-rubric-optimization, llm-mirror-test, llm-qualia-assessment, dogfooding (8) |
+| **Code Quality** | ai-code-review, canon-tdd, agentic-pbt, test-case-reducer, validate-before-ship, over-edit-measure, semantic-correctness-auditor, python-perf-optimization (8) |
+| **Meta & Creation** | skill-creator, skill-from-post, meta-skill-creator, agents-md, karpathy-method, fgts-naming-convention (6) |
+| **Thinking Methods** | engineering-problem-solving, failure-modes, approach-extractor, adhd-reasoning-mode, caveman-speak (5) |
+| **Research & Math** | advanced-math, integer-sequence-research, search-as-code, schema-harness, quantum-discovery, alphaproof-nexus (6) |
+| **Infrastructure & Misc** | os-bootstrap, program-bench, python-project-scaffold, claude-essence, ai-code-detection, dogfood, git-author-rewrite, narrative-systems-analysis, alphaevolve, auto-research-engineer (10) |
 
-### 1.2 Structural issues
+### 1.2 Structural defects
 
 | Issue | Details |
 |-------|---------|
-| **Duplicate skill** | `page-cache-lpe-mitigation` exists in 2 directories (`dirty-frag/` and `copy-fail-dirty-frag-response/`) — byte-identical copies |
-| **Typo directory name** | `copy-fail-reponse/` should be `copy-fail-response/` (missing 's') |
-| **Typo directory name** | `QualiaAssesment/` should be `QualiaAssessment/` (double s) |
-| **Typo directory name** | `Claude-Sonet-4.6-essense/` should be `Claude-Sonet-4.6-essence/` |
-| **Typo directory name** | `The-hacker-mindset/` vs all other dirs use lowercase convention |
-| **Typo directory name** | `StackSmashing/` vs all other dirs use kebab-case |
-| **Workspace artifact** | `git-author-rewrite-workspace/skill-snapshot/SKILL.md` has no proper frontmatter — not a live skill, but pollutes the skill tree |
-| **Backup files** | `skills/engineering-problem-solving/SKILL (9).md` and `SKILL (10).md` are editor backup files left in the tree |
+| **Exact duplicate** | `page-cache-lpe-mitigation` in `dirty-frag/` and `copy-fail-dirty-frag-response/` — byte-identical (MD5 match) |
+| **Directory typos** | `QualiaAssesment/`, `Claude-Sonet-4.6-essense/`, `copy-fail-reponse/`, `The-hacker-mindset/`, `StackSmashing/` |
+| **Workspace artifact** | `git-author-rewrite-workspace/skill-snapshot/SKILL.md` — no frontmatter, not a live skill |
+| **Editor backups** | `SKILL (9).md`, `SKILL (10).md` in engineering-problem-solving/ |
 
 ---
 
-## 2. Overlap Clusters
+## 2. Meta-Skill Evaluation Results (Subagent-Executed)
 
-### 2.1 CRITICAL: Exact duplicate
+Each skill was evaluated on three dimensions by the subagent that read its full content. Scores are 1–5.
 
-**`page-cache-lpe-mitigation`** × 2 paths:
-- `skills/dirty-frag/SKILL.md`
-- `skills/copy-fail-dirty-frag-response/SKILL.md`
+### 2.1 Falsification-first score distribution (engineering-problem-solving applied to each skill)
 
-Both are byte-identical (489 lines). One should be deleted and the other kept. The `copy-fail-dirty-frag-response/` directory name also collides with the separate `copy-fail-reponse/` (which has a different name: `copy-fail-lpe-mitigation`), creating confusion about which is which.
+| Score | Skills |
+|-------|--------|
+| **5/5** | integer-sequence-research, test-case-reducer, over-edit-measure, validate-before-ship, python-perf-optimization, page-cache-lpe-mitigation, copy-fail-lpe-mitigation, program-bench |
+| **4/5** | hacker-mindset, matilda, github-actions-security, flinch-probe, inverse-rubric-optimization, llm-mirror-test, skill-from-post, coding-agent-robustness, dogfooding, canon-tdd, agentic-pbt, engineering-problem-solving, schema-harness, ai-code-detection, alphaevolve, auto-research-engineer |
+| **3/5** | ai-vuln-harness, social-engineering-jailbreak, stack-smashing, InvestigativeTimelineAgent, hydronium-spec-driven-development, linux-security-audit, agent-eval-no-ground-truth, alphaproof-nexus, quantum-discovery, skill-creator, agents-md, karpathy-method, ai-code-review, python-project-scaffold, failure-modes, adhd-reasoning-mode |
+| **2/5** | redteaming-code, jsf-av-cpp-standards, context-eval, llm-qualia-assessment, semantic-correctness-auditor, os-bootstrap, dogfood, narrative-systems-analysis, advanced-math, search-as-code, fgts-naming-convention |
+| **1/5** | codex-security-adapter, meta-skill-creator, claude-essence, git-author-rewrite, caveman-speak |
 
-### 2.2 HIGH: Skill-creation overlap
+### 2.2 Skills ordered by verifiability (semantic-correctness-auditor assessment)
 
-**`meta-skill-creator`** (OpenAI-GPT-5.3-essence/) vs **`skill-creator`** vs **`skill-from-post`**
+| Verifiability | Skills |
+|---------------|--------|
+| **High** | page-cache-lpe-mitigation, copy-fail-lpe-mitigation, github-actions-security, InvestigativeTimelineAgent, hydronium-spec-driven-development, matilda, stack-smashing, integer-sequence-research, schema-harness, test-case-reducer, over-edit-measure, validate-before-ship, python-perf-optimization, program-bench, fgts-naming-convention, coding-agent-robustness, inverse-rubric-optimization, llm-mirror-test, flinch-probe, agentic-pbt, context-eval, dogfooding, alphaevolve, auto-research-engineer, git-author-rewrite, alphaproof-nexus (Lean proofs), quantum-discovery (simulation) |
+| **Medium** | linux-security-audit, jsf-av-cpp-standards, ai-code-review, codex-security-adapter, ai-vuln-harness, redteaming-code, copy-fail-lpe-mitigation, agent-eval-no-ground-truth, semantic-correctness-auditor, python-project-scaffold, os-bootstrap, dogfood, search-as-code, ai-code-detection |
+| **Low/None** | hacker-mindset, social-engineering-jailbreak, advanced-math, llm-qualia-assessment, adhd-reasoning-mode, caveman-speak, approach-extractor, failure-modes, engineering-problem-solving, skill-creator, skill-from-post, meta-skill-creator, agents-md, karpathy-method, claude-essence, narrative-systems-analysis, matilda (intermediate reasoning quality) |
 
-| Aspect | meta-skill-creator | skill-creator | skill-from-post |
-|--------|-------------------|---------------|-----------------|
-| Trigger | "make this reusable" | "create a skill" | "turn this post into a skill" |
-| Workflow | Design → refine → evolve | Create → edit → measure → optimize | Extract → draft → dogfood → patch |
-| Dogfooding | Not mentioned | Not mentioned | Explicit (2–6 rounds) |
-| Eval | Not mentioned | Variance analysis, benchmarking | Not mentioned |
+### 2.3 Top failure modes per cluster (from failure-modes skill applied to each)
 
-All three do substantially the same thing (create a SKILL.md) with different entry points. A user saying "make this into a skill" could trigger any of them, and the resulting output would differ. **Recommendation**: consolidate into a single skill (perhaps `skill-from-post` as the most battle-tested variant) with `skill-creator` as an alias/entry point, and retire `meta-skill-creator`.
+**Offensive Security**: Self-contamination (ai-vuln-harness), false positive flood (redteaming-code), containment escape (matilda), outdated mitigation assumptions (stack-smashing)
 
-### 2.3 HIGH: Linux kernel LPE family
+**Defensive Security**: Distro-specific command failures (linux-security-audit), SHA pinning rot (github-actions-security), BPF-LSM kernel dependency (LPE skills), semantic hallucination (InvestigativeTimelineAgent), C++98 frozen standard (jsf-av-cpp-standards), clock-frequency cascade error (hydronium-spec-driven-development)
 
-Three skills covering nearly identical ground:
+**AI Evaluation**: False precision (agent-eval-no-ground-truth), probe quality dependency (coding-agent-robustness), model-dependent results (context-eval), scale conflation (flinch-probe), prior knowledge leakage (inverse-rubric-optimization), confirmation bias amplifier (llm-mirror-test), phenomenal attribution by prose quality (llm-qualia-assessment), spec hallucination (dogfooding)
 
-- **`page-cache-lpe-mitigation`** (×2 copies): Covers Dirty Pipe → Copy Fail → Dirty Frag page-cache-poison LPE family
-- **`copy-fail-lpe-mitigation`** (in `copy-fail-reponse/`): Same threat (CVE-2026-31431, AF_ALG, algif_aead, bpf-lsm)
+**Code Quality**: False positive avalanche (ai-code-review), missing test list (canon-tdd), speculative property generation (agentic-pbt), over-reduction by weak interestingness (test-case-reducer), self-exemption paradox (semantic-correctness-auditor), profiling-first skipped (python-perf-optimization), sanity-check never written (validate-before-ship), Python-only limitation (over-edit-measure)
 
-These three represent a single skill concept with inconsistent naming. The two `page-cache-lpe-mitigation` copies are identical; `copy-fail-lpe-mitigation` has different content (289 lines) but the same domain. **Recommendation**: Consolidate into one skill under `page-cache-lpe-mitigation` (the name in the live system prompt), delete the duplicate, and migrate `copy-fail-lpe-mitigation` content into it.
+**Meta & Creation**: Over-engineering trivial skills (skill-creator), novelty assessment unreliability (skill-from-post), no verification infrastructure (meta-skill-creator), empirical patterns may not generalize (agents-md), heavyweight for simple requests (karpathy-method), abbreviation rot (fgts-naming-convention)
 
-### 2.4 MEDIUM: Security testing/adversarial cluster
+**Thinking Methods**: False exhaustiveness (failure-modes), EPS makes no falsifiable effectiveness claim (engineering-problem-solving), depends on reasoning quality (approach-extractor), can produce non-convergence (adhd-reasoning-mode), destroys nuance (caveman-speak)
 
-| Skill | Focus | Trigger phrase risk |
-|-------|-------|---------------------|
-| ai-vuln-harness | Multi-agent vuln research pipelines | "scan for vulns" |
-| redteaming-code | Red-teaming code + AI systems | "red team this" |
-| hacker-mindset | General adversarial thinking | "think like a hacker" |
-| social-engineering-jailbreak | Social engineering on LLMs | "jailbreak this" |
-| coding-agent-robustness | Stress-test coding agents | "test my agent's security" |
-| codex-security-adapter | Route security intent to plugin files | "security task" |
+**Research & Math**: Ghost citations (advanced-math), dual-implementation disagreement (integer-sequence-research), simulated search passed as real (search-as-code), epicycle accumulation (schema-harness), hardware queue optimism (quantum-discovery), circular "sorry" (alphaproof-nexus)
 
-These are largely complementary (different layers of the stack) but overlap at the edges:
-- `ai-vuln-harness` vs `redteaming-code`: both involve adversarial testing of AI systems. `ai-vuln-harness` focuses on building multi-agent *pipelines*; `redteaming-code` covers both traditional code security *and* AI-specific testing. A request to "find vulnerabilities in my agent" would ambiguity-trigger both.
-- `hacker-mindset` is a *thinking methodology* that could precede any of the others — it's not really an overlap, more a dependency.
-
-### 2.5 MEDIUM: LLM evaluation cluster
-
-| Skill | What it measures | Distinct enough? |
-|-------|------------------|-----------------|
-| agent-eval-no-ground-truth | Agent correctness without labels | ✅ Yes |
-| coding-agent-robustness | Agent reliability under stress | ✅ Yes (stress, not correctness) |
-| context-eval | Context management strategies | ✅ Yes (technical, not behavioral) |
-| flinch-probe | Token suppression probability | ✅ Yes (specific metric) |
-| inverse-rubric-optimization | Black-box rubric recovery | ✅ Yes (specific methodology) |
-| llm-mirror-test | Self-recognition / anomaly detection | ✅ Yes (specific experiment) |
-| llm-qualia-assessment | Phenomenal experience / qualia | ⚠️ Overlaps with flinch-probe at edges (both probe internal state) |
-
-**Trigger collision**: "evaluate this model" could hit 4+ of these. The descriptions are specific enough that a well-tuned agent would pick the right one, but a vague request would be ambiguous.
-
-### 2.6 MEDIUM: Code review + testing cluster
-
-| Skill | Stage | Distinct? |
-|-------|-------|-----------|
-| ai-code-review | Review diffs/PRs | ✅ |
-| canon-tdd | Write tests first | ✅ |
-| agentic-pbt | Fuzz with Hypothesis | ✅ |
-| test-case-reducer | Minimize failing inputs | ✅ |
-| validate-before-ship | Gate before merging | ✅ |
-| over-edit-measure | Post-hoc diff analysis | ✅ |
-| semantic-correctness-auditor | Meta: are tests enough? | ⚠️ Overlaps with validate-before-ship |
-
-`semantic-correctness-auditor` and `validate-before-ship` both answer "is this code correct enough to ship?" — the former through Rice's Theorem analysis, the latter through empirical validation. A request like "is this ready to merge" could trigger both, and they'd give different answers.
-
-### 2.7 LOW: Problem-solving methods
-
-| Skill | Approach | Distinct? |
-|-------|----------|-----------|
-| engineering-problem-solving | Falsification-first methodology | ✅ |
-| failure-modes | Systematic failure enumeration | ✅ (subset of EPS's hypothesis stage) |
-| approach-extractor | Post-hoc learnings capture | ✅ (EPS's §7 rendered as standalone) |
-| adhd-reasoning-mode | Associative/creative exploration | 🔄 Opposite of EPS's rigor |
-
-`engineering-problem-solving` and `adhd-reasoning-mode` are almost philosophical opposites: one demands falsification and rigor, the other demands free association and curiosity-driven jumps. They should never both fire on the same task. The triggers are distinct ("stuck on a hard problem" → EPS; "be creative" / "think outside the box" → ADHD mode).
-
-`failure-modes` is essentially a subset of `engineering-problem-solving`'s hypothesis stage (§2 Generate hypotheses → §3 Actively seek counterexamples). It has value as a standalone targeted skill but overlaps heavily with EPS when EPS is fully applied.
+**Infrastructure & Misc**: Over-commitment to canonical layout (os-bootstrap), undiscoverable behaviors (program-bench), template rot (python-project-scaffold), untestable claims (claude-essence), style signal decay (ai-code-detection), visual-only blind spot (dogfood), irreversible destruction (git-author-rewrite), confirmation bias (narrative-systems-analysis), evaluator misalignment (alphaevolve), local optimum trap (auto-research-engineer)
 
 ---
 
-## 3. Natural Pipelines (Dependency Chains)
+## 3. Critical Overlap Clusters
 
-These are skills whose output naturally feeds into another. Unlike overlaps, these are *good* things to document.
+### 3.1 🔴 CRITICAL: page-cache-lpe-mitigation — exact duplicate
+- Identical files in `dirty-frag/` and `copy-fail-dirty-frag-response/` (489 lines each, same MD5)
+- `copy-fail-lpe-mitigation` (in `copy-fail-reponse/`) covers Copy Fail only; the duplicated skill is a strict superset (Copy Fail + Dirty Frag + Dirty Pipe)
+- Subagent verdict: **Consolidate into one kept skill; delete both copies of the duplicate; merge copy-fail-lpe-mitigation into it**
 
-### 3.1 Research → Discovery → Report
+### 3.2 🔴 CRITICAL: meta-skill-creator dominated by skill-creator + skill-from-post
 
+Subagent pairwise analysis:
+
+| Pair | Overlap | Conflict | Verdict |
+|------|---------|----------|---------|
+| meta-skill-creator ↔ skill-creator | HIGH | SIGNIFICANT (quality gap) | meta-skill-creator should be retired |
+| skill-creator ↔ skill-from-post | MODERATE | LOW (different inputs) | STRONG pipeline: extract→evaluate |
+| meta-skill-creator ↔ skill-from-post | HIGH | SIGNIFICANT (quality gap) | skill-from-post dominates |
+
+**Falsification gradient**: skill-from-post (4/5) > skill-creator (3/5) > meta-skill-creator (1/5)
+
+**Subagent verdict**: meta-skill-creator has zero falsification mechanism, no verification infrastructure, and at 87 lines is a philosophy statement, not an actionable workflow. Retire it. Keep skill-creator and skill-from-post as a two-stage pipeline (skill-from-post extracts drafts → skill-creator evaluates and hardens).
+
+### 3.3 🟡 HIGH: Offensive × Defensive security trigger collisions
+
+Subagent finding: `redteaming-code` and `ai-vuln-harness` overlap at HIGH level — both involve adversarial testing of AI systems with different automation levels. `hacker-mindset` is the falsification-strongest (4/5 EPS score) and is the universal prerequisite for all security skills, but has no verification requirement.
+
+Key cross-pair discovered by subagent:
+- `redteaming-code` social engineering section (~30 lines) is a shallow subset of `social-engineering-jailbreak` (~196 lines) — trigger collision hazard for "red team my LLM" queries.
+- `stack-smashing` techniques are what `matilda`'s §2c exploits operationalize at scale — undocumented dependency.
+- `ai-vuln-harness` and `matilda` share a reasoning-graph architecture (Plan→Judge→Action→Summary) with `schema-harness` — this pattern is reusable across agentic skills.
+
+### 3.4 🟡 HIGH: integer-sequence-research × alphaproof-nexus
+
+**Strongest pipeline found**: integer-sequence-research (5/5 falsification) generates candidate sequences with confidence scoring → alphaproof-nexus formalizes in Lean.
+
+But **philosophical conflict** on "proved":
+- integer-sequence-research: 90-100 confidence = "OEIS-ready" = no counterexample found empirically
+- alphaproof-nexus: proved = Lean `sorry`-free machine-checked proof
+- If both fire, agent could claim "proved" when only empirically verified
+
+Subagent verdict: **Both should fire on OEIS conjecture queries** — integer-sequence-research for empirical falsification, alphaproof-nexus for formal verification. The agent should run both and report at both confidence levels.
+
+### 3.5 🟡 HIGH: engineering-problem-solving × adhd-reasoning-mode
+
+Subagent finding: **Phase complements, not philosophical opposites.**
+
+| Dimension | EPS | ADHD |
+|-----------|-----|------|
+| Primary phase | Convergence-first | Divergence-first |
+| Core filter | Falsifiability | Novelty |
+| Hypothesis count | 2-3 competing | 3-5 parallel streams |
+| Stopping rule | Explicit (§6) | Convergence protocol |
+| **EPS self-score** | **4/5** — fails own effectiveness claim | N/A |
+
+The real map: ADHD for problem *discovery/framing* → EPS for problem *solving/verification*. Using ADHD to solve or EPS to discover would both fail.
+
+### 3.6 🟡 MEDIUM: Code Quality pipeline discovered
+
+Subagent found a natural 5-stage pipeline across the code quality cluster:
+
+```
+canon-tdd (write tests first)
+  → agentic-pbt (fuzz the invariants)
+    → ai-code-review (review the diff)
+      → validate-before-ship (gate the merge)
+        → over-edit-measure (audit minimality)
+```
+
+With `semantic-correctness-auditor` as a meta-layer that audits the whole pipeline.
+
+### 3.7 🟡 MEDIUM: AI Evaluation overlap cluster
+
+Subagent EPS scores range 2–5 across the cluster — widest spread found:
+
+- coding-agent-robustness (5/5) — the falsification champion: adversarially probes, tracks regression, measures numerically
+- context-eval (2/5) — simple A/B comparison, no falsification, no adversarial orientation
+- llm-mirror-test ↔ llm-qualia-assessment: MAJOR conflict despite MEDIUM overlap — same subject (model's relationship to own outputs), incompatible epistemologies (falsificationist vs. additive/philosophical)
+
+---
+
+## 4. Pipeline Atlas (Subagent-Identified Chains)
+
+### 4.1 Research pipeline
 ```
 search-as-code (gather sources)
-  → integer-sequence-research (analyze sequence)
-    → advanced-math (prove properties)
+  → integer-sequence-research (empirical discovery + falsification) [5/5 EPS]
+    → alphaproof-nexus (Lean formal verification)
 ```
 
-### 3.2 Security investigation → Analysis → Capture
-
+### 4.2 Security pipeline
 ```
-redteaming-code (find vulns)
-  → hacker-mindset (think adversarially about impact)
-    → failure-modes (classify what can go wrong)
-      → approach-extractor (capture learnings)
-```
-
-Or the kernel-LPE variant:
-```
-page-cache-lpe-mitigation (respond to incident)
-  → InvestigativeTimelineAgent (trace telemetry)
-    → approach-extractor (capture incident lessons)
+hacker-mindset (adversarial thinking methodology) [4/5 EPS]
+  → redteaming-code (find vulnerabilities systematically) [2/5]
+    → ai-vuln-harness (scale with multi-agent pipeline) [3/5]
+      → InvestigativeTimelineAgent (trace telemetry) [3/5]
+        → approach-extractor (capture learnings)
 ```
 
-### 3.3 Build → Test → Ship
-
+### 4.3 Development pipeline
 ```
-karpathy-method (spec the system)
-  → canon-tdd (write tests first)
-    → agentic-pbt (fuzz the logic)
-      → validate-before-ship (gate the merge)
-        → over-edit-measure (audit the diff)
-```
-
-Or the Python-specific variant:
-```
-python-project-scaffold (create project)
-  → python-perf-optimization (profile + optimize)
-    → agentic-pbt (fuzz for correctness)
-      → semantic-correctness-auditor (are we done?)
+python-project-scaffold (project bootstrap) [3/5] — the cluster hub (7/9 incoming connections)
+  → python-perf-optimization (profile + optimize) [5/5]
+    → canon-tdd (TDD loop) [4/5]
+      → agentic-pbt (property-based fuzzing) [4/5]
+        → validate-before-ship (empirical gate) [5/5]
 ```
 
-### 3.4 Skill creation pipeline
-
+### 4.4 Skill creation pipeline
 ```
-skill-from-post (draft a skill from source material)
-  → skill-creator (benchmark + refine)
-    → agents-md (integrate into agent instructions)
-      → dogfooding (self-test the result)
-```
-
-### 3.5 Debug → Solve → Capture
-
-```
-engineering-problem-solving (solve the bug)
-  → approach-extractor (extract why that approach worked)
+skill-from-post (draft from source material) [4/5]
+  → skill-creator (eval + harden) [3/5]
+    → agents-md (integrate into agent instructions) [3/5]
+      → dogfooding (self-test result) [4/5]
 ```
 
-### 3.6 Low-level development
-
+### 4.5 Problem-solving pipeline
 ```
-os-bootstrap (scaffold kernel)
-  → jsf-av-cpp-standards (ensure safety-critical compliance)
-  → stack-smashing (understand exploit surface)
-  → program-bench (reconstruct any reference binaries)
+adhd-reasoning-mode (divergent exploration) [3/5]
+  → engineering-problem-solving (falsification convergence) [4/5]
+    → failure-modes (systematic audit) [3/5]
+      → approach-extractor (capture generalizable principle)
+```
+
+### 4.6 Binary reconstruction pipeline
+```
+stack-smashing (understand exploit mechanics)
+  → program-bench (reconstruct binary behavior) [5/5]
+    → os-bootstrap (scaffold kernel using observed structure) [2/5]
 ```
 
 ---
 
-## 4. Trigger Collision Matrix
+## 5. Trigger Collision Matrix (Subagent Assessment)
 
-Situations where multiple skills could reasonably fire on the same user request.
-
-| User says | Skills that could trigger | Verdict |
-|-----------|--------------------------|---------|
-| "make a skill for X" | meta-skill-creator, skill-creator, skill-from-post | 🔴 Ambiguous — 3 different approaches |
-| "evaluate my LLM agent" | agent-eval-no-ground-truth, coding-agent-robustness, inverse-rubric-optimization | 🟡 Depends on what "evaluate" means |
-| "find bugs in this code" | agentic-pbt, test-case-reducer, failure-modes, ai-code-review | 🟡 Different stages of bug-finding |
-| "is this correct" | validate-before-ship, semantic-correctness-auditor | 🟡 Overlapping answers |
-| "red team this" | redteaming-code, ai-vuln-harness, hacker-mindset | 🟡 Broad trigger |
-| "Linux kernel exploit" | page-cache-lpe-mitigation (×2), copy-fail-lpe-mitigation, stack-smashing | 🔴 Ambiguous which LPE skill |
-| "test my app" | canon-tdd, dogfooding, dogfood, agentic-pbt | 🟡 Different test types |
-| "optimize this" | auto-research-engineer, alphaevolve, python-perf-optimization | 🟡 Python vs general vs search |
-| "paper about sequences" | integer-sequence-research, advanced-math, search-as-code | 🟡 Research vs. discovery vs. analysis |
-| "prove this theorem" | alphaproof-nexus, advanced-math, integer-sequence-research | 🟡 Different proof methods |
-
-**Key risks**:
-1. 🔴 Skill-creation triple triggers every time someone says "skill"
-2. 🔴 LPE triple triggers every time someone mentions Linux kernel exploits
-3. 🟡 "Evaluate" is dangerously overloaded across 3+ distinct eval skills
-4. 🟡 "Test" is overloaded across unit testing, fuzzing, and dogfooding
+| User says | Skills that could trigger | Subagent verdict |
+|-----------|--------------------------|------------------|
+| "make a skill for X" | meta-skill-creator, skill-creator, skill-from-post | 🔴 3-way — retire meta-skill-creator |
+| "Linux kernel exploit" | page-cache-lpe-mitigation (×2), copy-fail-lpe-mitigation, stack-smashing | 🔴 4-way — consolidate LPE skills |
+| "evaluate my LLM agent" | agent-eval-no-ground-truth, coding-agent-robustness, inverse-rubric-optimization | 🟡 3-way — CAR should win (most specific, actionable) |
+| "prove this theorem" | alphaproof-nexus, advanced-math, integer-sequence-research | 🟡 3-way — advanced-math's over-trigger policy is a problem; deprioritize when formal proof is requested |
+| "find bugs in this code" | agentic-pbt, test-case-reducer, failure-modes, ai-code-review | 🟡 4-way — different stages; should chain not compete |
+| "optimize this algorithm" | alphaevolve, auto-research-engineer, python-perf-optimization | 🟡 alphaevolve wins for algorithmic search; ARE for simpler assets |
+| "test my app" | canon-tdd, dogfooding, dogfood, agentic-pbt | 🟡 Different test types — specify unit vs. QA vs. fuzz |
+| "what am I missing" | engineering-problem-solving, adhd-reasoning-mode, failure-modes | 🟡 3-way tie — needs disambiguation by symptom presence |
+| "think outside the box" | adhd-reasoning-mode, hacker-mindset | 🟢 Complement (ADHD for creativity, hacker-mindset for adversarial) |
+| "review this PR" | ai-code-review, validate-before-ship, over-edit-measure | 🟢 Should chain: review → validate → measure |
+| "is this correct" | validate-before-ship, semantic-correctness-auditor | 🟡 Overlapping answers — VBS for empirical, SCA for theoretical limits |
 
 ---
 
-## 5. Contradictions & Conflicts
+## 6. Contradictions & Conflicts
 
-### 5.1 Communication style
+### 6.1 Methodology conflicts
 
-| Skill A | Skill B | Conflict |
-|---------|---------|----------|
-| `caveman-speak` (minimal tokens, primitive speech) | `engineering-problem-solving` (thorough, documented reasoning) | **Direct contradiction** — EPS demands detailed logs and rationale; caveman strips all nuance |
-| `adhd-reasoning-mode` (free association, wide search) | `engineering-problem-solving` (falsification, converge first) | **Methodological opposite** — one diverges, the other converges. Using both would produce whiplash |
+| Skill A | Skill B | Nature | Severity |
+|---------|---------|--------|----------|
+| EPS [4/5] | caveman-speak [1/5] | EPS requires calibrated confidence language; caveman strips all nuance | **HIGH** — caveman should never be applied to EPS reasoning traces |
+| EPS [4/5] | adhd-reasoning-mode [3/5] | EPS converges via falsification; ADHD diverges via curiosity | **MEDIUM** — phase complements, not true opposites; sequence ADHD→EPS |
+| LMT (mirror-test) [4/5] | LQA (qualia) [2/5] | LMT is falsificationist; LQA is additive/philosophical | **HIGH** — incompatible epistemologies on same subject |
+| agentic-pbt [4/5] | canon-tdd [4/5] | PBT's random exploration doesn't fit TDD's "one test at a time" model | **MEDIUM** — PBT after code exists, TDD during construction |
+| program-bench [5/5] | python-project-scaffold [3/5] | Program-bench: test-first (from binary observation). Scaffold: spec-first (then tests) | **MEDIUM** — opposite test generation strategies; resolve by using program-bench's tests as ground truth |
 
-### 5.2 Process tempo
+### 6.2 Naming conflicts
 
-| Skill A | Skill B | Conflict |
-|---------|---------|----------|
-| `auto-research-engineer` (fast keep/revert loops) | `validate-before-ship` (demands proof before shipping) | **Process conflict** — ARE wants rapid iteration; VBS demands you never merge untested math. They could coexist if ARE's loop is understood as "research, not merge." |
-| `alpha-evolve` (search for better algorithm) | `validate-before-ship` (gate new algorithms) | **Complementary, not conflicting** — evolve generates candidates, VBS gates them. But if VBS fires mid-evolution, it would block progress. Scope matters. |
-
-### 5.3 Scope overlap (likely benign)
-
-| Skill A | Skill B | Relationship |
-|---------|---------|-------------|
-| `dogfood` (web app QA) | `dogfooding` (self-testing LLM systems) | Names are confusingly similar but domains differ. Risk: "dogfood this" triggers both for a web app, one irrelevant. |
-| `intelligence` (InvestigativeTimelineAgent) | `hacker-mindset` | Both involve investigation but at different levels (telemetry vs. general adversarial thinking) |
+| Symptom | Cause |
+|---------|-------|
+| `dogfood` vs `dogfooding` | Names are confusingly similar but domains differ (web QA vs LLM self-testing) |
+| `page-cache-lpe-mitigation` × 2 + `copy-fail-lpe-mitigation` | Three skills, two names, one exact duplicate |
+| `meta-skill-creator` vs `skill-creator` vs `skill-from-post` | Three skills, all about creating skills |
 
 ---
 
-## 6. Gaps
+## 7. Verified Strongest Pipelines
 
-Domains or tasks not covered by any existing skill:
+Subagents ranked these as the highest-value cross-skill compositions:
 
-| Missing capability | Notes | Priority |
-|--------------------|-------|----------|
-| **Frontend/web development** | Building React/Vue/etc. apps, HTML/CSS, design implementation | HIGH — large gap |
-| **API design & development** | REST, GraphQL, gRPC API design patterns | HIGH |
-| **Database/SQL** | Schema design, query optimization, migrations | HIGH |
-| **Refactoring** | Systematic code restructuring without changing behavior | MEDIUM |
-| **Documentation writing** | Writing READMEs, API docs, internal docs | MEDIUM |
-| **Performance (non-Python)** | General perf optimization (JS, Go, Rust) | MEDIUM |
-| **DevOps / CI/CD (general)** | Not just GitHub Actions security, but actual deployment pipelines | MEDIUM |
-| **Testing (general)** | Integration tests, e2e tests, mocking strategies | MEDIUM |
-| **Containerization** | Docker, Docker Compose, Kubernetes | MEDIUM |
-| **Code generation** | Scaffolding APIs, models, SDKs from specs | LOW |
-| **Accessibility** | a11y standards, screen reader support | LOW |
-| **Internationalization** | i18n, localization workflows | LOW |
+1. **integer-sequence-research → alphaproof-nexus**: Empirical discovery → formal verification. The strongest methodological pipeline in the entire collection. Bridges falsification-first (5/5) and mechanical verification (Lean).
 
-Note: `python-perf-optimization` (just added) partially fills the "performance" gap but only for Python. `python-project-scaffold` fills the "scaffolding" gap but only for Python.
+2. **python-project-scaffold → 7 downstream skills**: The infrastructure cluster hub. Every development workflow starts here. No other skill has 7/9 incoming pipeline connections.
+
+3. **search-as-code → integer-sequence-research → advanced-math**: Gather sources → discover sequences → prove properties. Full research workflow.
+
+4. **hacker-mindset → redteaming-code → ai-vuln-harness**: Adversarial method → systematic attack → scaled automation. Covers thinking through execution.
+
+5. **canon-tdd → agentic-pbt → validate-before-ship**: Test-driven construction → fuzz invariants → gate before merging. Production-grade quality pipeline.
+
+6. **skill-from-post → skill-creator → dogfooding**: Draft → harden → self-test. Complete skill lifecycle.
+
+7. **adhd-reasoning-mode → engineering-problem-solving → approach-extractor**: Explore → verify → capture. Learning lifecycle from discovery to durable knowledge.
 
 ---
 
-## 7. Recommendations
+## 8. Gaps (Identified by Meta-Skills Applied to the Collection)
 
-### 7.1 Immediate (structural fixes)
+### 8.1 Missing skills (subagent-identified)
 
-1. **Delete duplicate**: Remove one copy of `page-cache-lpe-mitigation` — keep `dirty-frag/` (shorter name), remove `copy-fail-dirty-frag-response/`
-2. **Rename typos**: Fix `copy-fail-reponse/` → `copy-fail-response/`, `QualiaAssesment/` → `QualiaAssessment/`, `Claude-Sonet-4.6-essense/` → `Claude-Sonet-4.6-essence/`
-3. **Clean up artifacts**: Delete `git-author-rewrite-workspace/`, `skills/engineering-problem-solving/SKILL (9).md`, `SKILL (10).md`
-4. **Rename for consistency**: `StackSmashing/` → `stack-smashing/`, `The-hacker-mindset/` → `hacker-mindset/`
+| Missing capability | Identified by | Priority |
+|--------------------|---------------|----------|
+| **Skill auditor / skill reviewer** | skill-creator / agents-md subagent | HIGH — no independent review of skills exists |
+| **Database/SQL design** | Infra cluster subagent | HIGH |
+| **Container/Docker/K8s** | Infra cluster subagent | HIGH |
+| **CI/CD pipeline design (general)** | Infra cluster subagent | MEDIUM |
+| **AGENTS.md linter** | agents-md subagent | MEDIUM |
+| **Observability (metrics/logs/tracing)** | Infra cluster subagent | MEDIUM |
+| **General performance optimization** | Misc cluster subagent | MEDIUM (perf currently Python-only) |
+| **Frontend/web development** | Implicit from code quality cluster gaps | MEDIUM |
+| **Secrets management** | Infra cluster subagent | MEDIUM |
+| **API design** | Cross-cluster analysis | MEDIUM |
+| **Workflow-to-skill quick capture** | Meta cluster subagent — bridge missing between "here's my workflow" and SKILL.md | MEDIUM |
+| **Skill merger** | Meta cluster subagent — no workflow to deduplicate overlapping skills | LOW |
+| **Meta-skill governance** | Meta cluster subagent — no skill audits the meta-skill collection | LOW |
 
-### 7.2 Short-term (consolidations)
+### 8.2 What no skill does
 
-5. **Consolidate skill-creation**: Merge `meta-skill-creator` into `skill-creator` (or `skill-from-post` as the better-tested variant). The 3-entry-point situation will keep causing ambiguous triggers.
-6. **Consolidate LPE skills**: Merge `copy-fail-lpe-mitigation` content into `page-cache-lpe-mitigation` and delete the separate skill. Delete the duplicate `page-cache-lpe-mitigation` copy.
-7. **Clarify scope boundaries**: Add DISAMBIGUATION notes to:
-   - `auto-research-engineer` (vs. `alphaevolve`)
-   - `dogfood` (vs. `dogfooding`)
-   - `engineering-problem-solving` (vs. `failure-modes`)
-
-### 7.3 Medium-term (new skills)
-
-8. **Consider adding**: Frontend development, API design, database/SQL, general performance optimization, refactoring
-
-### 7.4 Pipeline documentation
-
-9. **Document preferred chains** (either in a PIPELINES.md or as `see-also` in skill frontmatter):
-   - Security: `hacker-mindset → redteaming-code → failure-modes → approach-extractor`
-   - Development: `canon-tdd → agentic-pbt → validate-before-ship`
-   - Research: `search-as-code → integer-sequence-research → advanced-math`
-   - Skill ops: `skill-from-post → skill-creator → dogfooding`
+- **No skill falsifies its own effectiveness claim** (EPS comes closest but scores 4/5 because it doesn't test its own value proposition)
+- **No skill checks for self-consistency** — semantic-correctness-auditor identifies this as the largest cross-cutting gap
+- **No skill validates pipeline integration** — integer-sequence-research→alphaproof-nexus is the strongest pipeline in the collection, but no skill tests that data flows correctly between them
+- **No skill provides a cross-skill dependency map** — this ORTHOGONAL_RUN.md is the first
 
 ---
 
-## 8. Summary Statistics
+## 9. Per-Skill Falsification & Verifiability Detail
 
-| Metric | Count |
-|--------|-------|
-| Total SKILL.md files | 60 |
-| Unique skill names | 58 |
-| Exact byte-identical duplicates | 1 pair (page-cache-lpe-mitigation) |
-| Directory name typos | 4 |
-| Orphan workspace artifacts | 1 |
-| Editor backup files | 2 |
-| HIGH overlap clusters | 3 (skill-creation, LPE response, problem-solving) |
-| MEDIUM overlap clusters | 2 (security testing, code review/testing) |
-| Direct contradictions | 2 (caveman↔EPS, adhd↔EPS) |
-| 🔴 Trigger collisions | 3 |
-| 🟡 Trigger collisions | 7 |
-| Identified gaps | 6 HIGH, 3 MEDIUM, 3 LOW |
+### 9.1 Top 5 most falsification-complete skills (EPS score 5/5)
+
+| Skill | What makes it 5/5 |
+|-------|-------------------|
+| **integer-sequence-research** | "Treat every formula as guilty until proven robust." Dual implementations, §4 adversarial falsification with weak zones + delta debugging + mutation attack, 8 documented failure modes, 3 dogfood runs |
+| **test-case-reducer** | ddmin algorithm is provably correct given a correct oracle. Binary verifiability: each candidate either triggers the interestingness test or doesn't |
+| **over-edit-measure** | Levenshtein distance + Cognitive Complexity are purely mechanical. AST parser + algorithm produce deterministic output |
+| **validate-before-ship** | Every step produces a falsifiable artifact. Guards against "it's mathematically correct" as justification |
+| **program-bench** | Tests BEFORE implementation. Dummy-binary validation ensures tests can fail. Pass rate is the single objective measure |
+
+### 9.2 Bottom 5 least falsifiable skills (EPS score 1–2/5)
+
+| Skill | What holds it back |
+|-------|---------------------|
+| **meta-skill-creator** | No falsification mechanism. No verification. "Simulate execution" is hand-wavy. Pure philosophy |
+| **claude-essence** | Zero testable claims. Untestable interior-state claims ("genuine curiosity"). Admits it doesn't change behavior |
+| **caveman-speak** | Stylistic utility — falsification is inapplicable as a dimension |
+| **git-author-rewrite** | Purely operational command sequence. No hypothesis testing |
+| **codex-security-adapter** | Router/map, not methodology. No falsification elements |
+
+---
+
+## 10. Recommendations
+
+### 10.1 Immediate (structural)
+
+1. **Delete duplicate**: Remove `copy-fail-dirty-frag-response/`; keep `dirty-frag/` (shorter name, same content)
+2. **Consolidate LPE skills**: Merge `copy-fail-lpe-mitigation` content into `page-cache-lpe-mitigation`; delete the separate copy
+3. **Retire meta-skill-creator**: Dominated by skill-creator and skill-from-post on all dimensions. Move its unique insights into skill-creator
+4. **Fix directory typo names**: `QualiaAssesment/`, `Claude-Sonet-4.6-essense/`, `copy-fail-reponse/`
+5. **Clean artifacts**: Remove `git-author-rewrite-workspace/`, `SKILL (9).md`, `SKILL (10).md`
+
+### 10.2 Short-term (trigger disambiguation)
+
+6. **Add priority notes** to skill descriptions for the 🔴 trigger collisions:
+   - On `advanced-math`: "Deprioritize when alphaproof-nexus or integer-sequence-research matches"
+   - On `redteaming-code`: "For LLM-specific social engineering, see social-engineering-jailbreak"
+   - On `dogfood`: "For self-testing LLM systems, see dogfooding"
+7. **Document preferred pipelines** in PIPELINES.md (or as `see-also` frontmatter)
+
+### 10.3 Medium-term (new skills)
+
+8. Fill top-priority gaps: Skill auditor, Database design, Container/infra, CI/CD pipeline design
+
+### 10.4 Process
+
+9. **Add falsification self-check to skill templates**: Every skill should answer "how would I know if this skill is wrong?" as a required section
+10. **Run approach-extractor after every non-trivial change**: Per the project's CLAUDE.md — "A solution without its learnings note is unfinished work"
