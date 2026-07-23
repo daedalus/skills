@@ -1,6 +1,6 @@
 ---
 name: engineering-problem-solving
-description: A rigorous, falsification-first methodology for tackling hard problems in engineering, software, systems, and applied science — debugging, algorithm design, formal/mathematical investigation, security research, and architecture decisions. Use this skill whenever the user is stuck on a non-trivial technical problem, asks for a root-cause analysis, wants a design reviewed, is doing iterative code review, is investigating a bug with unclear origin, or is doing exploratory research (math, security, systems) where the path to the answer isn't obvious. Also trigger when the user wants their reasoning process captured alongside the fix — not just the final patch — or asks to log rejected approaches. Do not use for simple, one-shot factual questions or trivial one-line fixes with an obvious cause.
+description: A rigorous, falsification-first methodology for tackling hard problems in engineering, software, systems, and applied science — debugging, algorithm design, formal/mathematical investigation, security research, and architecture decisions. Use this skill aggressively whenever the user is stuck on a non-trivial technical problem, asks for root-cause analysis, wants a design or PR reviewed, is doing iterative code review, is chasing a bug with unclear or intermittent origin, is verifying a mathematical identity or sequence, or is doing exploratory research (math, security, systems) where the path to the answer isn't obvious. Trigger even if the user just describes symptoms without asking for a "method" by name — "this is failing and I don't know why," "does this proof hold," "is this design sound" all qualify. Also trigger when the user wants their reasoning process captured alongside the fix, wants rejected approaches logged, or is doing a multi-round review cycle. Do not use for simple one-shot factual questions or trivial one-line fixes with an obvious, already-confirmed cause.
 ---
 
 # Engineering Problem-Solving
@@ -51,15 +51,26 @@ counterexample — not by plausibility.
 
 - Instrument, don't speculate: add logging/tracing/assertions at the
   boundaries between components rather than reasoning "it's probably X."
-- Binary-search the failure: bisect commits, bisect input size, bisect
-  code paths. This beats reading code top-to-bottom for anything non-trivial.
+- Binary-search the failure — concretely:
+  - Regression in history: `git bisect start`, mark good/bad, automate the
+    check with `git bisect run <script>` if the failure is scriptable.
+  - Regression in input size/shape: shrink by half repeatedly, not linearly.
+  - Intermittent/race-y: reproduce under a stressor (loop N times, add
+    artificial delay/jitter at suspected boundary) before trusting "it's
+    fixed" — a race that doesn't reproduce isn't confirmed fixed, just
+    unconfirmed.
+  - This beats reading code top-to-bottom for anything non-trivial.
 - Distinguish **symptom** from **root cause** explicitly. A fix that makes
   the symptom disappear without a mechanistic explanation of why is not done
   — flag it as a workaround, not a fix, until the mechanism is understood.
 - For formal/math problems: derive, don't pattern-match. Verify small cases
-  numerically before trusting an identity; verify the identity algebraically
-  before trusting the numerics. Both directions matter — numeric evidence
-  catches algebra mistakes, algebra catches numeric coincidences at small n.
+  numerically (a short brute-force script, or an OEIS b-file cross-check)
+  before trusting an identity; verify the identity algebraically before
+  trusting the numerics. Both directions matter — numeric evidence catches
+  algebra mistakes, algebra catches numeric coincidences at small n.
+- For security/vuln work: confirm the primitive first (crash, leak, race)
+  with a minimal trigger before reasoning about exploitability or impact —
+  don't build a severity narrative on an unconfirmed primitive.
 
 ## 5. Verify against ground truth, not against yourself
 
@@ -75,7 +86,27 @@ counterexample — not by plausibility.
 - Actively look for the counterexample that would break the current answer.
   If you can't find one after real effort, that's evidence, not proof.
 
-## 6. Log rejected alternatives, not just the final answer
+## 6. Know when to stop or escalate
+
+- Investigation has no natural end point unless you set one. Before
+  starting, decide what "enough evidence" looks like for this problem's
+  stakes — a one-off script bug needs less than a security-relevant race
+  condition.
+- Stop generating alternative hypotheses once one has passed an independent
+  verification step (Section 5) and the others have been actively falsified,
+  not just deprioritized. "I didn't get around to checking the others" is
+  not the same as "the others are ruled out."
+- Escalate to the user instead of continuing to grind when: the minimal
+  repro requires information only they have (production data, intent behind
+  a design decision), two hypotheses both survive verification and the
+  discriminating test requires resources you don't have (hardware, access,
+  time), or the fix requires a tradeoff call (correctness vs. performance vs.
+  scope) rather than a technical determination.
+- Time-box exploratory/research problems explicitly and report partial
+  progress honestly rather than silently converging on a guess to have an
+  answer to give.
+
+## 7. Log rejected alternatives, not just the final answer
 
 - Every real investigation accumulates dead ends that carry information:
   "tried X, ruled out because Y." Keep this alongside the fix/result — it
@@ -86,7 +117,7 @@ counterexample — not by plausibility.
   than a narrative of the successful path alone, because it's what makes the
   final answer defensible.
 
-## 7. Report honestly
+## 8. Report honestly
 
 - State confidence explicitly and calibrate it to the verification actually
   done (unit-tested vs. reasoned-through vs. "should work"). Don't round up.
@@ -107,4 +138,6 @@ counterexample — not by plausibility.
 - [ ] Independent verification performed (test, brute-force check, second
       derivation) — not just review of the same reasoning that produced it
 - [ ] Rejected alternatives recorded with the reason each was ruled out
+- [ ] Stopping point was a deliberate call (verified + others falsified), not
+      just running out of time or interest
 - [ ] Confidence in the final report matches the verification actually done
